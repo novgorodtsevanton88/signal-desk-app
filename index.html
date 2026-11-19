@@ -157,8 +157,8 @@ input[type=file]{font-size:13px;padding:10px}
 const COINS=[['BTC','Bitcoin',95000],['ETH','Ethereum',3300],['BNB','BNB',900],['SOL','Solana',180],['XRP','XRP',2.3],['DOGE','Dogecoin',0.2],['ADA','Cardano',0.7],['TRX','TRON',0.3],['AVAX','Avalanche',25],['LINK','Chainlink',18],['TON','Toncoin',3],['DOT','Polkadot',4],['SUI','Sui',3.2],['LTC','Litecoin',100],['BCH','Bitcoin Cash',500],['NEAR','NEAR Protocol',2.8],['APT','Aptos',5],['UNI','Uniswap',9],['ICP','Internet Computer',5],['XLM','Stellar',0.35],['ETC','Ethereum Classic',18],['HBAR','Hedera',0.22],['FIL','Filecoin',2.8],['ATOM','Cosmos',4.5],['ARB','Arbitrum',0.4],['OP','Optimism',0.7],['INJ','Injective',13],['AAVE','Aave',280],['PEPE','Pepe',0.00001],['SHIB','Shiba Inu',0.000013]]
 .map(([s,n,p])=>({s,n,p,vol:s==='BTC'?.0018:['ETH','BNB','TRX','LTC','BCH','XLM'].includes(s)?.0025:['PEPE','SHIB','DOGE','INJ','SUI','APT','ARB','OP'].includes(s)?.0045:.0035}));
 const CM=Object.fromEntries(COINS.map(c=>[c.s,c]));
-const VERSION='3.2';
-const DEF={bank:250,goal:20,risk:2,maxLev:10,marginPct:25,mode:'futures',feeMaker:0.02,feeTaker:0.05,feeSpot:0.1,dailyLoss:6,maxTrades:4,minConf:65,onboarded:false,bankSetAt:Date.now(),style:'calm',tpMode:'one'};
+const VERSION='4.0';
+const DEF={bank:250,goal:20,risk:1,maxLev:10,marginPct:25,mode:'futures',feeMaker:0.02,feeTaker:0.05,feeSpot:0.1,dailyLoss:6,maxTrades:4,minConf:65,onboarded:false,bankSetAt:Date.now(),style:'calm',tpMode:'one'};
 const STYLES={calm:{main:'1h',high:'4h',expiry:4,expTxt:'4 години',hold:72,name:'Спокійний',lbl:'1 год'},active:{main:'15m',high:'1h',expiry:4,expTxt:'1 годину',hold:96,name:'Активний',lbl:'15 хв'}};
 const ST=()=>STYLES[S.style]||STYLES.calm;
 function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
@@ -184,7 +184,7 @@ async function cloudInit(){
 }
 const S=Object.assign({},DEF,load('sd_settings',{}));
 let J=load('sd_journal',[]);
-const st={view:'signals',filter:'all',sel:'BTC',override:null,entryType:'limit',mode:S.mode,sig:{},P:{},src:'load',tick:0,chartSym:'BTC',chartTf:ST().main,prevStrong:null,bt:null,btRun:false,statTab:'mine',showPlan:true,closing:null,confirmClear:false};
+const st={view:'signals',filter:'all',sel:'BTC',override:null,entryType:'limit',mode:S.mode,sig:{},P:{},src:'load',tick:0,chartSym:'BTC',chartTf:ST().main,prevStrong:null,bt:null,btRun:false,statTab:'mine',tTab:'sig',custom:{dir:1,entry:null,sl:null,rr:2,sym:null},minePlan:null,btc:0,showPlan:true,closing:null,confirmClear:false};
 const TF={'5m':300,'15m':900,'1h':3600,'4h':14400};
 
 /* ================== ФОРМАТУВАННЯ ================== */
@@ -290,7 +290,21 @@ function superA(k,n=10,m=3){const at=atrA(k,n),dir=Array(k.length).fill(1),line=
 function indic(k){const c=k.map(b=>b.c);let ob=0;const obs=[0];for(let i=1;i<k.length;i++){ob+=c[i]>c[i-1]?k[i].v:c[i]<c[i-1]?-k[i].v:0;obs.push(ob)}
   return {k,c,e9:emaA(c,9),e21:emaA(c,21),e200:emaA(c,200),rsi:rsiA(c),md:macdA(c),bb:bbA(c),sr:stochRsiA(c),su:superA(k),ad:adxA(k),atr:atrA(k),obs}}
 function hIndic(h){const c=h.map(b=>b.c);return {c,e21:emaA(c,21),e50:emaA(c,50)}}
-function analyze(sym){const s=ST(),k=getCandles(sym,s.main),h=getCandles(sym,s.high);if(!k||k.length<210||!h||h.length<60)return null;return scoreAt(indic(k),hIndic(h),k.length-1,h.length-1,sym)}
+/* Стратегія (дослідження 2026-11-19): угода лише коли збігаються 5 перевірок тренду.
+   Тренд BTC: EMA21 проти EMA50 на старшому графіку BTC (тільки закриті свічки). */
+const STRAT={adx:30};
+function btcTrendFn(h){if(!h||h.length<60)return ()=>0;const hs=h[1].t-h[0].t,c=h.map(b=>b.c),a=emaA(c,21),b=emaA(c,50);
+  return t=>{let lo=0,hi=h.length-1,ans=-1;while(lo<=hi){const m=(lo+hi)>>1;if(h[m].t+hs<=t){ans=m;lo=m+1}else hi=m-1}return ans<50?0:Math.sign(a[ans]-b[ans])}}
+function applyStrategy(a,bt){ // bt: тренд BTC (1/-1/0) або null — не перевіряти
+  const v=a.ind.map(x=>x.vote),d=Math.sign(v[0]),w=d>0?'вгору':'вниз';
+  a.checks=[
+    {t:'Довгий тренд монети (EMA200)',ok:d!==0,d:d?w:'—'},
+    {t:'Старший графік у той самий бік',ok:!!d&&Math.sign(v[2])===d,d:v[2]>0?'вгору':v[2]<0?'вниз':'боковик'},
+    {t:'Supertrend у той самий бік',ok:!!d&&Math.sign(v[7])===d,d:v[7]>0?'вгору':'вниз'},
+    {t:'Сильний рух (ADX ≥ '+STRAT.adx+')',ok:a.adx>=STRAT.adx,d:'ADX '+(a.adx||0).toFixed(0)},
+    {t:'Біткоїн іде в той самий бік',ok:bt===null?true:(!!d&&bt===d),d:bt===null?'не враховано':bt>0?'BTC вгору':bt<0?'BTC вниз':'BTC без тренду'}];
+  a.pass=a.checks.filter(c=>c.ok).length;a.rawDir=d;a.dir=a.pass===5?d:0;a.conf=a.pass*20;return a}
+function analyze(sym,bt){const s=ST(),k=getCandles(sym,s.main),h=getCandles(sym,s.high);if(!k||k.length<210||!h||h.length<60)return null;return applyStrategy(scoreAt(indic(k),hIndic(h),k.length-1,h.length-1,sym),bt)}
 function scoreAt(I,HI,last,hl,sym){
   const {k,c,e9,e21,e200,md,bb,sr,su,ad,obs}=I,price=c[last],r=I.rsi[last],hist=md.h[last],histP=md.h[last-1];
   const pb=(price-bb.lo[last])/((bb.up[last]-bb.lo[last])||1),K=sr.k[last],Dd=sr.d[last];
@@ -326,7 +340,8 @@ function scoreAt(I,HI,last,hl,sym){
   let swLo=1e18,swHi=-1e18;for(let i=last-12;i<=last;i++){swLo=Math.min(swLo,k[i].l);swHi=Math.max(swHi,k[i].h)}
   return {sym,price,dir,score,conf,ind,atr,e21:e21[last],swLo,swHi,adx:ADX,rsi:r,notes};
 }
-function scan(){COINS.forEach(c=>{const a=analyze(c.s);if(a)st.sig[c.s]=a})}
+function nowT(){if(st.src==='demo'){const b=D.BTC.base;return b[b.length-1].t+300}return Date.now()/1000}
+function scan(){st.btc=btcTrendFn(getCandles('BTC',ST().high))(nowT());COINS.forEach(c=>{const a=analyze(c.s,st.btc);if(a)st.sig[c.s]=a})}
 
 /* ================== ПЛАН УГОДИ ================== */
 function feesFor(m){return m==='spot'?{mk:S.feeSpot/100,tk:S.feeSpot/100}:{mk:S.feeMaker/100,tk:S.feeTaker/100}}
@@ -335,20 +350,25 @@ function bankNow(){return S.bank+closedT().filter(t=>t.closedAt>S.bankSetAt).red
 function today(){const k=dayKey(Date.now());const c=closedT().filter(t=>dayKey(t.closedAt)===k);const o=J.filter(t=>dayKey(t.openedAt)===k);
   let streak=0;for(const t of c.slice().sort((a,b)=>b.closedAt-a.closedAt)){if(t.pnl<0)streak++;else break}
   return {pnl:c.reduce((s,t)=>s+t.pnl,0),count:o.length,lossStreak:streak}}
-function makePlan(a,dir,entryType,mode,bankIn,tpModeIn){const one=(tpModeIn||S.tpMode)==='one';
-  const f=feesFor(mode),fe=entryType==='market'?f.tk:f.mk,price=a.price,atr=a.atr;let entry;
+function makePlan(a,dir,entryType,mode,bankIn,tpModeIn){
+  const price=a.price,atr=a.atr;let entry;
   if(entryType==='market')entry=price;
   else if(dir===1)entry=(a.e21<price&&a.e21>price-1.2*atr)?a.e21:price-.3*atr;
   else entry=(a.e21>price&&a.e21<price+1.2*atr)?a.e21:price+.3*atr;
   let dist=dir===1?entry-(a.swLo-.25*atr):(a.swHi+.25*atr)-entry;dist=Math.min(Math.max(dist,atr),2.5*atr);
-  const sl=entry-dir*dist,tp1=entry+dir*(one?2:1.5)*dist,tp2=entry+dir*(one?2:2.5)*dist,bank=bankIn||bankNow(),riskUsd=bank*S.risk/100;
+  return sizePlan(a.sym,dir,entry,dist,entryType,mode,bankIn,tpModeIn||S.tpMode,2,a.conf);
+}
+// Розмір позиції, плече, тейки, комісії під заданий вхід і відстань до стопу.
+function sizePlan(sym,dir,entry,dist,entryType,mode,bankIn,tpMode,rr,conf){
+  const one=tpMode==='one',r1=one?(rr||2):1.5,r2=one?(rr||2):2.5,f=feesFor(mode),fe=entryType==='market'?f.tk:f.mk;
+  const sl=entry-dir*dist,tp1=entry+dir*r1*dist,tp2=entry+dir*r2*dist,bank=bankIn||bankNow(),riskUsd=bank*S.risk/100;
   let qty=riskUsd/(dist+entry*fe+sl*f.tk),lev=1;const notes=[];
   if(mode==='spot'){const cap=bank*.95;if(qty*entry>cap){qty=cap/entry;notes.push('Розмір обмежено банком, тому ризик менший за плановий.')}}
   else{const mc=bank*S.marginPct/100;lev=Math.max(1,Math.ceil(qty*entry/mc));if(lev>S.maxLev){lev=S.maxLev;qty=lev*mc/entry;notes.push(`Плече обмежено до ${S.maxLev}x, тому позиція і ризик менші за плановий.`)}}
   const notional=qty*entry,margin=notional/lev,liq=mode==='spot'?null:(dir===1?entry*(1-1/lev+.005):entry*(1+1/lev-.005)),feeIn=notional*fe;
   const pnlSL=-qty*dist-feeIn-qty*sl*f.tk,pnlTP=qty/2*(tp1-entry)*dir+qty/2*(tp2-entry)*dir-feeIn-qty/2*tp1*f.mk-qty/2*tp2*f.mk,pnlBE=one?null:qty/2*(tp1-entry)*dir-feeIn-qty/2*tp1*f.mk-qty/2*entry*f.tk;
   if(liq!=null&&(dir===1?liq>=sl:liq<=sl))notes.push('⚠️ Ліквідація ближче за стоп! Зменш плече.');
-  return {tpMode:one?'one':'two',sym:a.sym,dir,mode,entryType,entry,sl,tp1,tp2,dist,qty,lev,notional,margin,liq,feeIn,feeTP:feeIn+qty/2*tp1*f.mk+qty/2*tp2*f.mk,riskUsd:-pnlSL,pnlSL,pnlTP,pnlBE,notes,conf:a.conf,distPct:dist/entry*100,fmk:f.mk,ftk:f.tk};
+  return {tpMode:one?'one':'two',rr:r1,sym,dir,mode,entryType,entry,sl,tp1,tp2,dist,qty,lev,notional,margin,liq,feeIn,feeTP:feeIn+qty/2*tp1*f.mk+qty/2*tp2*f.mk,riskUsd:-pnlSL,pnlSL,pnlTP,pnlBE,notes,conf,distPct:dist/entry*100,fmk:f.mk,ftk:f.tk};
 }
 
 /* ================== ВЕРХНЯ ПАНЕЛЬ ================== */
@@ -370,66 +390,54 @@ function sigBadge(a){if(!a)return '<span class="badge W">…</span>';return a.di
 function confColor(c){return c>=75?'var(--up)':c>=S.minConf?'var(--amb)':'var(--mut2)'}
 function renderSignals(){
   let list=COINS.map(c=>({c,a:st.sig[c.s],p:st.P[c.s]}));
-  if(st.filter==='L')list=list.filter(x=>x.a&&x.a.dir>0);if(st.filter==='S')list=list.filter(x=>x.a&&x.a.dir<0);if(st.filter==='strong')list=list.filter(x=>x.a&&x.a.dir&&x.a.conf>=S.minConf);
+  if(st.filter==='L')list=list.filter(x=>x.a&&x.a.dir>0);if(st.filter==='S')list=list.filter(x=>x.a&&x.a.dir<0);if(st.filter==='strong')list=list.filter(x=>x.a&&x.a.dir);
   if(st.mode==='spot'&&st.filter!=='all')list=list.filter(x=>x.a&&x.a.dir>0);
-  list.sort((x,y)=>((y.a&&y.a.dir?y.a.conf:0)-(x.a&&x.a.dir?x.a.conf:0)));
+  list.sort((x,y)=>((y.a?y.a.pass+(y.a.dir?1:0):0)-(x.a?x.a.pass+(x.a.dir?1:0):0)));
   const strong=COINS.filter(c=>{const a=st.sig[c.s];return a&&a.dir&&a.conf>=S.minConf&&(st.mode!=='spot'||a.dir>0)}).length;
   let h=`<h2>Сигнали</h2><p class="sub">Топ-30 монет · ${st.mode==='spot'?'Спот (тільки покупка)':'Ф\'ючерси'} · графік ${ST().lbl} · сильних: <b style="color:var(--tx)">${strong}</b></p>
   <div class="seg" style="margin-bottom:10px"><button class="${S.style==='calm'?'on':''}" data-act="style" data-arg="calm">🧘 Спокійний · 1 год</button><button class="${S.style==='active'?'on':''}" data-act="style" data-arg="active">⚡ Активний · 15 хв</button></div>
-  <div class="chips">${[['all','Всі'],['strong','Сильні ≥'+S.minConf+'%'],['L','Лонг ↑'],['S','Шорт ↓']].map(([k,l])=>`<button class="chip ${st.filter===k?'on':''}" data-act="filter" data-arg="${k}">${l}</button>`).join('')}</div>`;
+  <div class="chips">${[['all','Всі'],['strong','Готові 5/5'],['L','Лонг ↑'],['S','Шорт ↓']].map(([k,l])=>`<button class="chip ${st.filter===k?'on':''}" data-act="filter" data-arg="${k}">${l}</button>`).join('')}</div>`;
   if(st.src==='demo')h+=`<div class="banner amb" data-act="help" data-arg="demo">Демо-режим: ціни змодельовані й прискорені. Детальніше →</div>`;
   if(!list.length)h+=`<div class="empty">Зараз немає сигналів за цим фільтром.<br>Відсутність угоди теж рішення.</div>`;
   list.forEach(({c,a,p})=>{const ch=p?p.ch:0;
     h+=`<button class="coin" data-act="pick" data-arg="${c.s}">${cic(c.s)}<div class="cn"><b>${st.src==='live'?tsym(c.s):c.s}</b><small>${c.n}</small></div>
     <div class="cp"><div class="p">${p?fp(p.price):'—'}</div><div class="c ${ch>=0?'up':'dn'}">${pct(ch)}</div></div>
-    <div class="sig">${sigBadge(a)}${a&&a.dir?`<div class="cbar"><b style="width:${a.conf}%;background:${confColor(a.conf)}"></b></div><div class="cf">${a.conf}%</div>`:''}</div></button>`});
+    <div class="sig">${sigBadge(a)}${a?`<div class="cbar"><b style="width:${a.pass*20}%;background:${a.dir?'var(--up)':a.pass>=4?'var(--amb)':'var(--mut2)'}"></b></div><div class="cf">${a.pass}/5</div>`:''}</div></button>`});
   document.getElementById('v-signals').innerHTML=h;
 }
 
 /* ================== УГОДА ================== */
-function curPlan(){const a=st.sig[st.sel];if(!a)return null;let dir=st.override||a.dir;if(st.mode==='spot'&&dir<0)dir=0;return {a,dir,plan:dir?makePlan(a,dir,st.entryType,st.mode):null}}
+const STRAT_STATS={wr:41,avgR:0.145}; // тест 2026-06…11: 30 монет, 1 год, ADX≥30 + тренд BTC, один тейк 2R
+function curPlan(){const a=st.sig[st.sel];if(!a)return null;let dir=a.dir;if(st.mode==='spot'&&dir<0)dir=0;return {a,dir,plan:dir?makePlan(a,dir,st.entryType,st.mode):null}}
 function cell(l,v,s,cls,help,full){return `<div class="cell ${full?'full':''}"><div class="l">${l}${help?` <span class="q" data-act="help" data-arg="${help}">?</span>`:''}</div><div class="v ${cls||''}">${v}</div>${s?`<div class="s">${s}</div>`:''}</div>`}
-function renderTrade(){
-  const el=document.getElementById('v-trade'),cp=curPlan();
-  let h=`<h2>План угоди</h2><p class="sub">Розрахунок під твій банк, ризик і комісію</p>
-  <select data-chg="sel" style="margin-bottom:12px">${COINS.map(c=>`<option value="${c.s}" ${c.s===st.sel?'selected':''}>${c.s} · ${c.n}</option>`).join('')}</select>`;
-  if(!cp){el.innerHTML=h+'<div class="empty">Аналізую ринок…</div>';return}
-  const {a,dir,plan}=cp,p=st.P[st.sel];
-  const ring=`conic-gradient(${confColor(a.conf)} ${a.conf*3.6}deg,var(--bg2) 0)`;
-  const dirTxt=a.dir>0?'<span class="up">ЛОНГ ↑</span>':a.dir<0?'<span class="dn">ШОРТ ↓</span>':'<span class="mu">ЧЕКАТИ</span>';
-  const verdict=!a.dir?'Індикатори не домовились. Найкраще зараз нічого не робити.':a.conf>=75?'Сильний сигнал: більшість індикаторів дивляться в один бік.':a.conf>=S.minConf?'Середній сигнал: можна входити, строго дотримуючись стопу.':'Слабкий сигнал: краще пропустити.';
-  h+=`<div class="card"><div class="hero"><div class="ring" style="background:${ring}"><div><b>${a.conf}%</b><small>ВПЕВНЕН.</small></div></div>
-  <div style="flex:1"><div class="dirt">${dirTxt}</div><div class="note" style="margin-top:4px">${a.dir>0?'Ставка на ріст ціни':a.dir<0?'Ставка на падіння ціни':'Немає чіткого напрямку'} · <span class="mono">${fp(p.price)}</span></div>
-  <div class="note" style="margin-top:6px;color:#c9cfdb">${verdict} <span class="q" data-act="help" data-arg="conf">?</span></div></div></div>
-  ${a.notes.length?`<div class="banner amb" style="margin:12px 0 0">${a.notes.join('<br>')}</div>`:''}</div>`;
-  h+=`<div class="lbl">Ринок</div><div class="seg"><button class="${st.mode==='futures'?'on':''}" data-act="mode" data-arg="futures">Ф'ючерси</button><button class="${st.mode==='spot'?'on':''}" data-act="mode" data-arg="spot">Спот</button></div>
-  <div class="lbl">Напрямок</div><div class="seg"><button class="${!st.override?'on':''}" data-act="dir" data-arg="0">Як радить сигнал</button><button class="${st.override===1?'on':''}" data-act="dir" data-arg="1">Лонг</button>${st.mode==='futures'?`<button class="${st.override===-1?'on':''}" data-act="dir" data-arg="-1">Шорт</button>`:''}</div>
-  <div class="lbl">Точка входу <span class="q" data-act="help" data-arg="entry">?</span></div><div class="seg"><button class="${st.entryType==='limit'?'on':''}" data-act="entry" data-arg="limit">Краща точка (лімітка)</button><button class="${st.entryType==='market'?'on':''}" data-act="entry" data-arg="market">Зараз по ринку</button></div>
-  <div class="lbl">Тейк-профіт <span class="q" data-act="help" data-arg="tp">?</span></div><div class="seg"><button class="${S.tpMode==='one'?'on':''}" data-act="tpm" data-arg="one">Один · постав і забудь</button><button class="${S.tpMode==='two'?'on':''}" data-act="tpm" data-arg="two">Два · треба 1 перевірка</button></div>`;
-  if(!plan){h+=`<div class="card" style="margin-top:14px"><div class="empty">${st.mode==='spot'&&(st.override||a.dir)<0?'На споті можна заробити лише на рості. Сигнал зараз на падіння, тому чекаємо.':'Чіткого сигналу немає.<br>Обери напрямок вручну, лише якщо впевнений.'}</div></div>`;el.innerHTML=h;return}
-  const t=today(),lim=bankNow()*S.dailyLoss/100,rr=(plan.pnlTP/plan.riskUsd);
-  h+=`<div class="lbl">Параметри</div><div class="grid2">
-  ${cell('Вхід',fp(plan.entry),plan.entryType==='limit'?`<span class="mu">лімітка · ${pct((plan.entry-p.price)/p.price*100)} від ціни</span>`:'<span class="mu">по ринку</span>','','entry')}
-  ${cell('Плече',st.mode==='spot'?'1x':plan.lev+'x',st.mode==='spot'?'<span class="mu">без плеча</span>':'<span class="mu">ізольована маржа</span>','','lev')}
+function segMode(){return `<div class="lbl">Ринок</div><div class="seg"><button class="${st.mode==='futures'?'on':''}" data-act="mode" data-arg="futures">Ф'ючерси</button><button class="${st.mode==='spot'?'on':''}" data-act="mode" data-arg="spot">Спот</button></div>`}
+function segEntry(lbl){return `<div class="lbl">${lbl} <span class="q" data-act="help" data-arg="entry">?</span></div><div class="seg"><button class="${st.entryType==='limit'?'on':''}" data-act="entry" data-arg="limit">Лімітка (краща ціна)</button><button class="${st.entryType==='market'?'on':''}" data-act="entry" data-arg="market">Зараз по ринку</button></div>`}
+function planCells(plan,p){const rr=plan.pnlTP/plan.riskUsd;
+  return `<div class="lbl">Параметри</div><div class="grid2">
+  ${cell('Вхід',fp(plan.entry),plan.entryType==='limit'&&p?`<span class="mu">лімітка · ${pct((plan.entry-p.price)/p.price*100)} від ціни</span>`:'<span class="mu">по ринку</span>','','entry')}
+  ${cell('Плече',plan.mode==='spot'?'1x':plan.lev+'x',plan.mode==='spot'?'<span class="mu">без плеча</span>':'<span class="mu">ізольована маржа</span>','','lev')}
   ${cell('Стоп-лосс',fp(plan.sl),`<span class="dn">${pct(-plan.distPct)} · ${fu(plan.pnlSL,1)}</span>`,'dn','sl')}
-  ${plan.tpMode==='one'?cell('Тейк-профіт',fp(plan.tp1),`<span class="up">${pct(plan.distPct*2)} · вся позиція</span>`,'up','tp'):
+  ${plan.tpMode==='one'?cell('Тейк-профіт',fp(plan.tp1),`<span class="up">${pct(plan.distPct*plan.rr)} · вся позиція</span>`,'up','tp'):
   cell('Тейк 1 (50%)',fp(plan.tp1),`<span class="up">${pct(plan.distPct*1.5)}</span>`,'up','tp')+cell('Тейк 2 (50%)',fp(plan.tp2),`<span class="up">${pct(plan.distPct*2.5)}</span>`,'up','tp')}
   ${cell('Ризик / прибуток','1 : '+rr.toFixed(1),`<span class="mu">ризик ${fu(plan.riskUsd)}</span>`,'','rr')}
   ${cell('Розмір позиції',fu(plan.notional),`<span class="mu">${fq(plan.qty)} ${tsym(plan.sym)}</span>`,'','size')}
   ${cell('Застава (маржа)',fu(plan.margin),`<span class="mu">${(plan.margin/bankNow()*100).toFixed(0)}% банку</span>`,'','margin')}
-  ${st.mode==='futures'?cell('Ліквідація',fp(plan.liq),'<span class="mu">далі за стоп ✓</span>','','liq'):cell('Ліквідація','немає','<span class="mu">на споті не буває</span>','','liq')}
+  ${plan.mode==='futures'?cell('Ліквідація',fp(plan.liq),'<span class="mu">далі за стоп ✓</span>','','liq'):cell('Ліквідація','немає','<span class="mu">на споті не буває</span>','','liq')}
   ${cell('Комісія',fu(plan.feeTP),'<span class="mu">вхід + вихід</span>','','fee')}
   </div>
   <div class="lbl">Що буде в кінці</div><div class="grid2">
   ${plan.tpMode==='one'?cell('Тейк-профіт',fu(plan.pnlTP,1),'<span class="mu">вже з комісією</span>','up')+cell('Стоп-лосс',fu(plan.pnlSL,1),'<span class="mu">максимальний збиток</span>','dn'):
   cell('Обидва тейки',fu(plan.pnlTP,1),'<span class="mu">вже з комісією</span>','up')+cell('Тейк 1, далі беззбиток',fu(plan.pnlBE,1),'<span class="mu">половина прибутку</span>',plan.pnlBE>=0?'up':'dn')+cell('Стоп-лосс',fu(plan.pnlSL,1),'<span class="mu">максимальний збиток</span>','dn',null,true)}
-  </div>
-  <div class="card" style="margin-top:12px"><div class="note">🎯 До денної цілі ${fu(S.goal)} лишилось <b style="color:var(--tx)">${fu(Math.max(0,S.goal-t.pnl))}</b>. Ця угода в разі успіху дає <b class="up">${(plan.pnlTP/S.goal*100).toFixed(0)}%</b> цілі. Тобто потрібно приблизно <b style="color:var(--tx)">${Math.max(1,Math.ceil(Math.max(0,S.goal-t.pnl)/plan.pnlTP))}</b> таких виграшів.</div></div>`;
-  if(plan.notes.length)h+=`<div class="banner amb">${plan.notes.join('<br>')}</div>`;
-  if(a.conf<S.minConf)h+=`<div class="banner amb">Впевненість ${a.conf}% нижча за твій мінімум (${S.minConf}%). За правилами стратегії цю угоду варто пропустити.</div>`;
-  if(t.pnl<=-lim)h+=`<div class="banner red">Денний ліміт збитку досягнуто. Стратегія забороняє нові угоди сьогодні.</div>`;
+  </div>`}
+function guards(plan){const t=today(),lim=bankNow()*S.dailyLoss/100;let h='';
+  if(plan.notes.length)h+=`<div class="banner amb" style="margin-top:12px">${plan.notes.join('<br>')}</div>`;
+  if(S.risk>2)h+=`<div class="banner red" style="margin-top:12px">Ризик ${S.risk}% на угоду забагато. Рекомендовано 1%: так просідання лишається в розумних межах. Змінити: ⚙ → «Ризик на угоду».</div>`;
+  if(t.pnl<=-lim)h+=`<div class="banner red" style="margin-top:12px">Денний ліміт збитку досягнуто. Стратегія забороняє нові угоди сьогодні.</div>`;
+  else if(t.count>=S.maxTrades)h+=`<div class="banner amb" style="margin-top:12px">Ліміт угод на сьогодні (${S.maxTrades}) вичерпано.</div>`;
+  return h}
+function stepsFor(plan){
   const one=plan.tpMode==='one',ex=ST().expTxt,order=`${plan.entryType==='limit'?'Обери <b>Лімітний</b> ордер, ціна':'Обери <b>Ринковий</b> ордер, орієнтир'} <b>${fp(plan.entry)}</b>, кількість <b>${fq(plan.qty)} ${tsym(plan.sym)}</b> (≈ ${fu(plan.notional)}).`;
-  const steps=st.mode==='futures'?(one?[
+  const steps=plan.mode==='futures'?(one?[
     `Binance → <b>Ф'ючерси USDⓈ-M</b> → <b>${tsym(plan.sym)}USDT</b>, маржа <b>Ізольована</b>, плече <b>${plan.lev}x</b>.`,
     order,
     `Постав галочку <b>TP/SL</b> під ордером: Take Profit <b>${fp(plan.tp1)}</b>, Stop Loss <b>${fp(plan.sl)}</b>.`,
@@ -445,11 +453,53 @@ function renderTrade(){
     `${plan.entryType==='limit'?'<b>Лімітна</b> купівля за':'<b>Ринкова</b> купівля, орієнтир'} <b>${fp(plan.entry)}</b>, кількість <b>${fq(plan.qty)} ${tsym(plan.sym)}</b> (≈ ${fu(plan.notional)}).`,
     one?`Після покупки постав <b>OCO-ордер</b> на всю кількість: ліміт (тейк) <b>${fp(plan.tp1)}</b>, стоп <b>${fp(plan.sl)}</b>. Далі можна не стежити.`:`Після покупки постав <b>OCO</b> на половину: тейк <b>${fp(plan.tp1)}</b>, стоп <b>${fp(plan.sl)}</b>. На другу половину: тейк <b>${fp(plan.tp2)}</b>, стоп <b>${fp(plan.sl)}</b>.`,
     plan.entryType==='limit'?`Якщо лімітка не виконалась за ${ex}, скасуй її.`:`Не чіпай угоду до стопу або тейку.`];
-  h+=`<div class="lbl">Як відкрити на біржі</div><div class="card"><ol class="steps">${steps.map(s=>`<li>${s}</li>`).join('')}</ol></div>
-  <button class="btn g" data-act="toJournal">✓ Я відкрив угоду, записати в журнал</button>
-  <button class="btn o" data-act="planChart">Показати на графіку</button>`;
+  return `<div class="lbl">Як відкрити на біржі</div><div class="card"><ol class="steps">${steps.map(x=>`<li>${x}</li>`).join('')}</ol></div>`}
+function checksHtml(a){return `<div class="card">${a.checks.map(c=>`<div class="ind"><div class="dot badge ${c.ok?'L':'S'}">${c.ok?'✓':'✕'}</div><div class="t"><b>${c.t}</b></div><div class="val">${c.d}</div></div>`).join('')}</div>`}
+function renderTrade(){
+  const el=document.getElementById('v-trade');
+  let h=`<h2>Угода</h2><p class="sub">Розрахунок під твій банк, ризик ${S.risk}% і комісію</p>
+  <div class="seg" style="margin-bottom:12px"><button class="${st.tTab!=='mine'?'on':''}" data-act="ttab" data-arg="sig">Сигнал додатку</button><button class="${st.tTab==='mine'?'on':''}" data-act="ttab" data-arg="mine">Моя угода</button></div>
+  <select data-chg="sel" style="margin-bottom:12px">${COINS.map(c=>`<option value="${c.s}" ${c.s===st.sel?'selected':''}>${c.s} · ${c.n}</option>`).join('')}</select>`;
+  if(st.tTab==='mine'){el.innerHTML=h+mineFormHtml();renderMineOut();return}
+  const cp=curPlan();if(!cp){el.innerHTML=h+'<div class="empty">Аналізую ринок…</div>';return}
+  const {a,dir,plan}=cp,p=st.P[st.sel],col=a.dir?'var(--up)':a.pass>=4?'var(--amb)':'var(--mut2)';
+  const dirTxt=a.dir>0?'<span class="up">ЛОНГ ↑</span>':a.dir<0?'<span class="dn">ШОРТ ↓</span>':'<span class="mu">ЧЕКАТИ</span>';
+  const r1=bankNow()*S.risk/100;
+  const verdict=a.dir?`Усі 5 перевірок пройдено. За рік такі угоди вигравали ~${STRAT_STATS.wr}%, у середньому <b class="up">+${STRAT_STATS.avgR}R</b> (≈ ${fu(STRAT_STATS.avgR*r1,1)} на угоду при твоєму ризику).`:`Пройдено ${a.pass} з 5. Входити рано: чекаємо, поки збіжуться всі перевірки.`;
+  h+=`<div class="card"><div class="hero"><div class="ring" style="background:conic-gradient(${col} ${a.pass*72}deg,var(--bg2) 0)"><div><b>${a.pass}/5</b><small>ПЕРЕВІРКИ</small></div></div>
+  <div style="flex:1"><div class="dirt">${dirTxt}</div><div class="note" style="margin-top:4px">${a.dir>0?'Ставка на ріст ціни':a.dir<0?'Ставка на падіння ціни':'Сигналу поки немає'} · <span class="mono">${p?fp(p.price):'—'}</span></div>
+  <div class="note" style="margin-top:6px;color:#c9cfdb">${verdict} <span class="q" data-act="help" data-arg="conf">?</span></div></div></div></div>${checksHtml(a)}`;
+  h+=segMode()+segEntry('Точка входу')+`<div class="lbl">Тейк-профіт <span class="q" data-act="help" data-arg="tp">?</span></div><div class="seg"><button class="${S.tpMode==='one'?'on':''}" data-act="tpm" data-arg="one">Один 2R · постав і забудь</button><button class="${S.tpMode==='two'?'on':''}" data-act="tpm" data-arg="two">Два тейки</button></div>`;
+  if(!plan){h+=`<div class="card" style="margin-top:14px"><div class="empty">${st.mode==='spot'&&a.dir<0?'На споті можна заробити лише на рості, а сигнал зараз на падіння. Чекаємо.':'Сигналу немає. Відсутність угоди теж рішення 🧘'}</div><button class="btn o" data-act="ttab" data-arg="mine">Порахувати свою угоду →</button></div>`;el.innerHTML=h;return}
+  const t=today();
+  h+=planCells(plan,p)+`<div class="card" style="margin-top:12px"><div class="note">🎯 До денної цілі ${fu(S.goal)} лишилось <b style="color:var(--tx)">${fu(Math.max(0,S.goal-t.pnl))}</b>. Ця угода в разі успіху дає <b class="up">${(plan.pnlTP/S.goal*100).toFixed(0)}%</b> цілі.</div></div>`
+   +guards(plan)+stepsFor(plan)+`<button class="btn g" data-act="toJournal">✓ Я відкрив угоду, записати в журнал</button><button class="btn o" data-act="planChart">Показати на графіку</button>`;
   el.innerHTML=h;
 }
+/* ---------- Моя угода: калькулятор для власного входу ---------- */
+function suggestSL(a,dir,entry){let d=dir>0?entry-(a.swLo-.25*a.atr):(a.swHi+.25*a.atr)-entry;d=Math.min(Math.max(d,a.atr),2.5*a.atr);return entry-dir*d}
+function mineDefaults(){const a=st.sig[st.sel],p=st.P[st.sel],c=st.custom;if(st.mode==='spot')c.dir=1;
+  if(c.sym!==st.sel){c.sym=st.sel;c.entry=null;c.sl=null}
+  const price=p?p.price:a?a.price:0;if(c.entry==null&&price)c.entry=+price.toPrecision(6);
+  if(c.sl==null&&a&&c.entry)c.sl=+suggestSL(a,c.dir,c.entry).toPrecision(6)}
+function mineFormHtml(){mineDefaults();const c=st.custom;
+  return segMode()+`<div class="lbl">Напрямок</div><div class="seg"><button class="${c.dir>0?'on':''}" data-act="cdir" data-arg="1">Лонг ↑</button>${st.mode==='futures'?`<button class="${c.dir<0?'on':''}" data-act="cdir" data-arg="-1">Шорт ↓</button>`:''}</div>
+  <div class="grid2" style="margin-top:12px"><div class="fld"><label>Ціна входу</label><input type="number" inputmode="decimal" step="any" data-inp="entry" value="${c.entry??''}"></div>
+  <div class="fld"><label>Стоп-лосс <span class="q" data-act="help" data-arg="sl">?</span></label><input type="number" inputmode="decimal" step="any" data-inp="sl" value="${c.sl??''}"></div></div>
+  <button class="btn sm o" data-act="csl">Підставити рекомендований стоп</button>`+segEntry('Ордер на вхід')+
+  `<div class="lbl">Тейк-профіт <span class="q" data-act="help" data-arg="rr">?</span></div><div class="seg">${[1.5,2,3].map(r=>`<button class="${c.rr===r?'on':''}" data-act="crr" data-arg="${r}">${r}R</button>`).join('')}</div><div id="mineOut"></div>`}
+function renderMineOut(){const el=document.getElementById('mineOut');if(!el)return;const c=st.custom,a=st.sig[st.sel],dir=st.mode==='spot'?1:c.dir;st.minePlan=null;
+  if(!(c.entry>0&&c.sl>0)){el.innerHTML='<div class="empty">Введи ціну входу і стоп-лосс.</div>';return}
+  if((c.sl-c.entry)*dir>=0){el.innerHTML=`<div class="banner red" style="margin-top:12px">Для ${dir>0?'лонгу':'шорту'} стоп має бути ${dir>0?'нижче':'вище'} ціни входу.</div>`;return}
+  const dist=Math.abs(c.entry-c.sl),plan=sizePlan(st.sel,dir,c.entry,dist,st.entryType,st.mode,null,'one',c.rr,null),warn=[];
+  if(a){if(dist<0.5*a.atr)warn.push(`Стоп дуже близько: звичайне коливання ціни (≈ ${fp(a.atr)} за свічку) може вибити його випадково.`);
+    if(dist>3*a.atr)warn.push('Стоп дуже далеко: позиція вийде маленькою, а угода може тягтися довго.');
+    if(a.rawDir&&a.rawDir!==dir)warn.push('Угода проти довгого тренду цієї монети.');
+    if(st.btc&&st.btc!==dir)warn.push('Угода проти тренду біткоїна. У дослідженні такі угоди були помітно гіршими.')}
+  if(c.rr<2)warn.push('Тейк менший за 2R: щоб бути в плюсі, доведеться вигравати понад 40% угод.');
+  st.minePlan=plan;
+  el.innerHTML=(warn.length?`<div class="banner amb" style="margin-top:12px">⚠️ ${warn.join('<br>⚠️ ')}</div>`:a?`<div class="banner green" style="margin-top:12px">✓ Угода в бік тренду монети і біткоїна, стоп у розумних межах.</div>`:'')
+    +planCells(plan,st.P[st.sel])+guards(plan)+stepsFor(plan)+`<button class="btn g" data-act="toJournalMine">✓ Я відкрив угоду, записати в журнал</button>`}
 
 /* ================== ГРАФІК ================== */
 let CH=null,cS,e21S,e200S,lines=[],chKey='',chLen=0;
@@ -560,7 +610,7 @@ function hMap(k,h,ms,hs){const m=[];let j=-1;for(let i=0;i<k.length;i++){const c
 function btCoin(sym,k,h,ms,hs,o){
   const I=indic(k),HI=hIndic(h),mp=hMap(k,h,ms,hs),tr=[];let i=210;
   while(i<k.length-2){const hi=mp[i];if(hi<55){i++;continue}
-    const a=scoreAt(I,HI,i,hi,sym);
+    const a=applyStrategy(scoreAt(I,HI,i,hi,sym),o.noBtc?null:o.btc(k[i].t+ms));
     if(!a.dir||a.conf<o.minConf||(o.mode==='spot'&&a.dir<0)){i++;continue}
     const p=makePlan(a,a.dir,o.entryType,o.mode,o.bank,o.tpMode),d=a.dir;let fi=-1;
     if(o.entryType==='market')fi=i+1;else for(let j=i+1;j<=Math.min(i+o.expiry,k.length-1);j++){if(d>0?k[j].l<=p.entry:k[j].h>=p.entry){fi=j;break}}
@@ -592,15 +642,16 @@ async function runBT(ds,src){
   st.btRun=true;const s=ST(),ms=TF[s.main],hs=TF[s.high],alt=S.tpMode==='one'?'two':'one';
   const base={bank:bankNow(),mode:st.mode,entryType:st.entryType,tpMode:S.tpMode,expiry:s.expiry,hold:s.hold};
   const main=[],raw=[],altT=[],byCoin={};let tmin=Infinity,tmax=-Infinity,used=0;
+  const bd=ds.find(d=>d.sym==='BTC'),hasBtc=!!bd;base.btc=bd?btcTrendFn(bd.h):()=>0;base.noBtc=!hasBtc;
   for(let n=0;n<ds.length;n++){const d=ds[n];st.btProg=`Рахую ${d.sym} (${n+1}/${ds.length})…`;renderStatsIf();await tickUI();
     if(d.k.length<300)continue;used++;tmin=Math.min(tmin,d.k[210].t);tmax=Math.max(tmax,d.k[d.k.length-1].t);
     const a=btCoin(d.sym,d.k,d.h,ms,hs,{...base,minConf:S.minConf});main.push(...a);byCoin[d.sym]=a.reduce((x,t)=>x+t.pnl,0);
-    raw.push(...btCoin(d.sym,d.k,d.h,ms,hs,{...base,minConf:40}));altT.push(...btCoin(d.sym,d.k,d.h,ms,hs,{...base,minConf:S.minConf,tpMode:alt}))}
+    if(hasBtc)raw.push(...btCoin(d.sym,d.k,d.h,ms,hs,{...base,minConf:S.minConf,noBtc:true}));altT.push(...btCoin(d.sym,d.k,d.h,ms,hs,{...base,minConf:S.minConf,tpMode:alt}))}
   st.btRun=false;st.btProg='';
   if(!used){st.btErr='Замало історії: потрібно щонайменше 300 свічок '+s.main+' на монету (≈ '+(s.main==='1h'?'2 місяці':'4 дні')+').';renderStatsIf();return}
   const days=Math.max(1,(tmax-tmin)/86400),sum=btSummary(btPortfolio(main,base),days),altS=btSummary(btPortfolio(altT,base),days);
-  const buckets=[[40,55],[55,65],[65,75],[75,101]].map(([a,b])=>{const t=raw.filter(x=>x.conf>=a&&x.conf<b),w=t.filter(x=>x.pnl>0).length;return {a,b,n:t.length,wr:t.length?w/t.length*100:0,avgR:t.length?t.reduce((x,y)=>x+y.r,0)/t.length:0}});
-  st.bt={...sum,days,buckets,byCoin,src,coins:used,alt:{mode:alt,...altS},cfg:{...base,minConf:S.minConf,style:s.name+' · '+s.lbl}};renderStatsIf();
+  const noBtc=hasBtc?btSummary(btPortfolio(raw,base),days):null;
+  st.bt={...sum,days,noBtc,hasBtc,byCoin,src,coins:used,alt:{mode:alt,...altS},cfg:{...base,minConf:S.minConf,style:s.name+' · '+s.lbl}};renderStatsIf();
 }
 function btDemo(){const s=ST();return COINS.map(c=>({sym:c.s,k:agg(D[c.s].base,TF[s.main]),h:agg(D[c.s].base,TF[s.high])}))}
 async function btLive(){const s=ST(),out=[];for(let i=0;i<COINS.length;i++){st.btProg=`Завантажую історію ${COINS[i].s} (${i+1}/30)…`;renderStatsIf();try{const k=await fetchK(COINS[i].s,s.main,1000);out.push({sym:COINS[i].s,k,h:agg(k,TF[s.high])})}catch(e){}}return out}
@@ -636,9 +687,7 @@ function btHtml(){
   <div class="stat">${cell('Вінрейт',b.wr.toFixed(0)+'%')}${cell('Profit factor',isFinite(b.pf)?b.pf.toFixed(2):'∞','<span class="mu">>1.3 = добре</span>',b.pf>=1.3?'up':b.pf<1?'dn':'','pf')}
   ${cell('Середнє на угоду',(b.avgR>=0?'+':'')+b.avgR.toFixed(2)+'R','<span class="mu">R = твій ризик</span>',b.avgR>=0?'up':'dn','exp')}${cell('Макс. просідання',fu(-b.dd),'<span class="mu">'+(b.dd/b.cfg.bank*100).toFixed(0)+'% банку</span>','dn')}
   ${cell('Тейків',b.res.tp,'','up')}${cell('Стопів',b.res.sl,'','dn')}${b.res.be?cell('Беззбиток',b.res.be):''}${b.res.time?cell('Закрито за часом',b.res.time,'<span class="mu">'+s.hold+' свічок</span>'):''}</div>
-  <div class="lbl">Чи працює індикатор впевненості</div><div class="card">
-  ${b.buckets.map(x=>`<div class="ind"><div class="t"><b>${x.a}–${x.b>100?100:x.b-1}%</b><small>${x.n} угод</small></div><div class="val" style="text-align:right"><span style="color:var(--tx)">${x.n?x.wr.toFixed(0)+'%':'—'}</span> вінрейт<br><span class="${x.avgR>=0?'up':'dn'}">${x.n?(x.avgR>=0?'+':'')+x.avgR.toFixed(2)+'R':''}</span></div></div>`).join('')}
-  <p class="note" style="margin:8px 0 0">Якщо у верхніх рядках результат кращий, ніж у нижніх, індикатор впевненості корисний. Якщо ні, його ваги треба налаштувати.</p></div>
+  <div class="lbl">Що дає фільтр біткоїна</div><div class="card"><div class="note">${b.hasBtc?`З фільтром (як зараз): <b class="${b.tot>=0?'up':'dn'}">${fu(b.tot,1)}</b> · PF ${isFinite(b.pf)?b.pf.toFixed(2):'∞'} · просідання ${fu(-b.dd)}<br>Без фільтра: <b class="${b.noBtc.tot>=0?'up':'dn'}">${fu(b.noBtc.tot,1)}</b> · PF ${isFinite(b.noBtc.pf)?b.noBtc.pf.toFixed(2):'∞'} · просідання ${fu(-b.noBtc.dd)}`:'У даних немає BTC, тому фільтр біткоїна не враховано. Додай файли BTCUSDT, щоб перевірити повну стратегію.'}</div></div>
   <div class="lbl">Інший режим тейку</div><div class="card"><div class="note">${b.alt.mode==='one'?'Один тейк (2R)':'Два тейки (1.5R + 2.5R)'}: <b class="${b.alt.tot>=0?'up':'dn'}">${fu(b.alt.tot,1)}</b> · вінрейт ${b.alt.wr.toFixed(0)}% · PF ${isFinite(b.alt.pf)?b.alt.pf.toFixed(2):'∞'} · просідання ${fu(-b.alt.dd)}</div>
   <div class="note" style="margin-top:6px;color:#c9cfdb">${b.alt.tot>b.tot?'👉 На цій історії інший режим кращий. Можна перемкнути його у вкладці «Угода».':'👉 Твій поточний режим кращий.'}</div></div>`;
   const bc=Object.entries(b.byCoin).sort((x,y)=>y[1]-x[1]);
@@ -657,7 +706,7 @@ function toast(list){const a=st.sig[list[0]];let el=document.getElementById('toa
 
 /* ================== ПОЯСНЕННЯ ================== */
 const H={
-conf:['Впевненість сигналу',`<p>Додаток перевіряє 10 індикаторів. Кожен «голосує» за ріст, падіння або утримується. Впевненість показує, наскільки дружно вони голосують і наскільки сильний сигнал.</p><p><b>Важливо:</b> 80% не означає 80% шансу на виграш. Це означає, що картина на графіку узгоджена. Гарантій на ринку немає, тому стоп-лосс обов'язковий завжди.</p><p>Правило: торгуй лише сигнали від <b>${S.minConf}%</b>. Слабші пропускай.</p>`],
+conf:['5 перевірок сигналу',`<p>Сигнал з'являється, лише коли збігаються всі 5 перевірок тренду: довгий тренд монети (EMA200), старший графік, Supertrend, сильний рух (ADX ≥ 30) і тренд біткоїна в той самий бік.</p><p>Так вирішило дослідження на 12 місяцях історії 30 монет: решта індикаторів майже нічого не передбачала, а фільтр біткоїна покращив результат найбільше.</p><p>На частині історії, яка не використовувалась при налаштуванні, такі угоди вигравали ~${STRAT_STATS.wr}% і давали в середньому +${STRAT_STATS.avgR}R (R = твій ризик на угоду). Тобто програшів більше, ніж виграшів, але виграш удвічі більший. <b>Стоп-лосс обов'язковий завжди.</b></p><p>Інші індикатори видно у вкладці «Графік» для довідки.</p>`],
 lev:['Кредитне плече','<p>Плече дає змогу відкрити більшу позицію, ніж твої гроші. З плечем 10x і заставою $50 ти керуєш позицією на $500.</p><p>Тут плече не «для більшого заробітку». Воно підбирається так, щоб при стоп-лоссі ти втратив рівно свій ризик (напр. $5) і не більше. Великий збиток робить не плече, а розмір позиції без стопу.</p>'],
 sl:['Стоп-лосс','<p>Ціна, на якій угода автоматично закривається з невеликим збитком. Це запобіжник.</p><p><b>Три правила:</b> ставити одразу при вході; ніколи не відсувати далі; не «пересиджувати» мінус. Саме ці 20% угод без дисципліни і з\'їдають твій прибуток.</p><p>Стоп ставиться за найближчим мінімумом/максимумом ціни з запасом, з урахуванням волатильності (ATR).</p>'],
 tp:['Тейк-профіт','<p>Ціна, де фіксується прибуток. Є два режими.</p><p><b>Один тейк · постав і забудь</b>: один тейк на всю позицію, прибуток = 2× ризику. Тейк і стоп ставляться одразу разом з ордером, і за угодою не треба стежити. Добре підходить, якщо не хочеш постійно перевіряти телефон.</p><p><b>Два тейки</b>: Тейк 1 (1.5× ризику) закриває половину, після чого стоп переносиш у беззбиток. Тейк 2 (2.5× ризику) закриває решту. Тут потрібна одна перевірка після першого тейку.</p><p>Який режим вигідніший, покаже бектест.</p>'],
@@ -685,8 +734,7 @@ function settingsHtml(onb){
   ${fld('s_mp','Макс. застава в одній угоді, % банку',S.marginPct,'Решта банку лишається вільною')}
   ${fld('s_dl','Денний ліміт збитку, % банку',S.dailyLoss,'Досяг ліміту = кінець торгівлі на сьогодні')}
   ${fld('s_mt','Макс. угод на день',S.maxTrades,'','1')}
-  ${fld('s_mc','Мінімальна впевненість сигналу, %',S.minConf,'Сигнали слабші за це вважаються «пропустити»','5')}
-  <div class="lbl">Комісії біржі, %</div><div class="grid2">${fld('s_fm','Ф\'ючерси maker',S.feeMaker,'лімітка')}${fld('s_ft','Ф\'ючерси taker',S.feeTaker,'ринок')}</div>${fld('s_fs','Спот',S.feeSpot,'')}`}
+    <div class="lbl">Комісії біржі, %</div><div class="grid2">${fld('s_fm','Ф\'ючерси maker',S.feeMaker,'лімітка')}${fld('s_ft','Ф\'ючерси taker',S.feeTaker,'ринок')}</div>${fld('s_fs','Спот',S.feeSpot,'')}`}
   <button class="btn" data-act="saveSet" data-arg="${onb?1:0}">${onb?'Почати':'Зберегти'}</button>
   ${onb?'':`<div class="lbl" style="margin-top:22px">Резервна копія журналу</div><p class="note">Журнал зберігається в цьому браузері. Роби копію, щоб не втратити його.</p>
   <div class="grid2"><button class="btn sm o" data-act="copyJ">Копіювати</button><button class="btn sm o" data-act="impJ">Вставити копію</button></div>
@@ -720,6 +768,11 @@ document.addEventListener('click',e=>{
   else if(a==='toJournal'){const cp=curPlan();if(!cp||!cp.plan)return;J.push(Object.assign({},cp.plan,{id:Date.now().toString(36),status:'open',openedAt:Date.now()}));save('sd_journal',J);renderTop();setView('journal')}
   else if(a==='stab'){st.statTab=g;renderStats()}
   else if(a==='btRun'){st.btErr=null;st.btRun=true;renderStats();(st.src==='live'?btLive():Promise.resolve(btDemo())).then(ds=>runBT(ds,st.src==='live'?'Binance, остання історія':'Демо-дані'))}
+  else if(a==='ttab'){st.tTab=g;renderTrade()}
+  else if(a==='cdir'){st.custom.dir=+g;st.custom.sl=null;renderTrade()}
+  else if(a==='csl'){st.custom.sl=null;renderTrade()}
+  else if(a==='crr'){st.custom.rr=+g;renderTrade()}
+  else if(a==='toJournalMine'){const p=st.minePlan;if(!p)return;J.push(Object.assign({},p,{id:Date.now().toString(36),status:'open',openedAt:Date.now(),manual:true}));save('sd_journal',J);renderTop();setView('journal')}
   else if(a==='tpm'){S.tpMode=g;save('sd_settings',S);renderTrade()}
   else if(a==='style'){S.style=g;save('sd_settings',S);st.chartTf=ST().main;st.sig={};st.prevStrong=null;renderSignals();(st.src==='live'?liveRefresh():Promise.resolve()).then(()=>{scan();renderAll()})}
   else if(a==='planChart'){st.chartSym=st.sel;st.chartTf=ST().main;st.showPlan=true;setView('chart')}
@@ -743,12 +796,13 @@ document.addEventListener('click',e=>{
     if(!(en>0&&ex>0&&sz>0))return;const f=feesFor(mode),qty=sz/en,pnl=qty*(ex-en)*dir-sz*f.tk-qty*ex*f.tk,now=Date.now();
     J.push({id:now.toString(36),sym,dir,mode,entry:en,exit:ex,qty,lev,notional:sz,feeIn:sz*f.tk,ftk:f.tk,status:'closed',result:'manual',pnl,openedAt:now,closedAt:now,sl:null,tp1:null,tp2:null});save('sd_journal',J);closeSheet();renderAll()}
 });
+document.addEventListener('input',e=>{const k=e.target.dataset.inp;if(!k)return;st.custom[k]=parseFloat(e.target.value);renderMineOut()});
 document.addEventListener('change',e=>{const g=e.target.dataset.chg;if(g==='btFile'&&e.target.files.length){st.btErr=null;st.btProg='Читаю файли…';st.btRun=true;renderStats();btFiles([...e.target.files]).then(ds=>runBT(ds,'Файли Binance')).catch(er=>{st.btErr=er.message;st.btProg='';st.btRun=false;renderStats()})}if(g==='sel'){st.sel=e.target.value;st.override=null;renderTrade()}if(g==='chartSym'){st.chartSym=e.target.value;chartData(true);renderInd();if(st.src==='live'&&!(L[st.chartSym]&&L[st.chartSym][st.chartTf]))loadTf(st.chartSym,st.chartTf).then(()=>chartData(true))}});
 
 /* ================== ЗАПУСК ================== */
 function loop(){
   if(st.src==='demo')demoTick();st.tick++;
-  if(st.tick%8===1){scan();scanNotify();if(st.view==='trade')renderTrade();if(st.view==='chart'){renderInd();drawLines()}}
+  if(st.tick%8===1){scan();scanNotify();if(st.view==='trade'){if(st.tTab==='mine')renderMineOut();else renderTrade()}if(st.view==='chart'){renderInd();drawLines()}}
   renderTop();
   if(st.view==='signals')renderSignals();
   if(st.view==='chart')chartData(false);
