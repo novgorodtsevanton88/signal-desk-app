@@ -157,6 +157,7 @@ input[type=file]{font-size:13px;padding:10px}
 const COINS=[['BTC','Bitcoin',95000],['ETH','Ethereum',3300],['BNB','BNB',900],['SOL','Solana',180],['XRP','XRP',2.3],['DOGE','Dogecoin',0.2],['ADA','Cardano',0.7],['TRX','TRON',0.3],['AVAX','Avalanche',25],['LINK','Chainlink',18],['TON','Toncoin',3],['DOT','Polkadot',4],['SUI','Sui',3.2],['LTC','Litecoin',100],['BCH','Bitcoin Cash',500],['NEAR','NEAR Protocol',2.8],['APT','Aptos',5],['UNI','Uniswap',9],['ICP','Internet Computer',5],['XLM','Stellar',0.35],['ETC','Ethereum Classic',18],['HBAR','Hedera',0.22],['FIL','Filecoin',2.8],['ATOM','Cosmos',4.5],['ARB','Arbitrum',0.4],['OP','Optimism',0.7],['INJ','Injective',13],['AAVE','Aave',280],['PEPE','Pepe',0.00001],['SHIB','Shiba Inu',0.000013]]
 .map(([s,n,p])=>({s,n,p,vol:s==='BTC'?.0018:['ETH','BNB','TRX','LTC','BCH','XLM'].includes(s)?.0025:['PEPE','SHIB','DOGE','INJ','SUI','APT','ARB','OP'].includes(s)?.0045:.0035}));
 const CM=Object.fromEntries(COINS.map(c=>[c.s,c]));
+const VERSION='3.2';
 const DEF={bank:250,goal:20,risk:2,maxLev:10,marginPct:25,mode:'futures',feeMaker:0.02,feeTaker:0.05,feeSpot:0.1,dailyLoss:6,maxTrades:4,minConf:65,onboarded:false,bankSetAt:Date.now(),style:'calm',tpMode:'one'};
 const STYLES={calm:{main:'1h',high:'4h',expiry:4,expTxt:'4 години',hold:72,name:'Спокійний',lbl:'1 год'},active:{main:'15m',high:'1h',expiry:4,expTxt:'1 годину',hold:96,name:'Активний',lbl:'15 хв'}};
 const ST=()=>STYLES[S.style]||STYLES.calm;
@@ -238,6 +239,7 @@ async function fetchK(sym,tf,limit=300){
   return j.map(k=>({t:k[0]/1000,o:k[1]*m,h:k[2]*m,l:k[3]*m,c:k[4]*m,v:k[5]/m}))}
 async function loadTf(sym,tf){try{(L[sym]=L[sym]||{})[tf]=await fetchK(sym,tf)}catch(e){}}
 async function liveRefresh(){const s=ST();loadTickers();for(let i=0;i<COINS.length;i+=6){await Promise.all(COINS.slice(i,i+6).flatMap(c=>[loadTf(c.s,s.main),loadTf(c.s,s.high)]))}
+  candlePrices();
   if(![s.main,s.high].includes(st.chartTf))await loadTf(st.chartSym,st.chartTf)}
 function liveWS(){
   if(WS){WS.onclose=null;try{WS.close()}catch(e){}}
@@ -252,6 +254,8 @@ async function loadTickers(){ // ціни і зміна за 24 год чере�
   try{const f=useF(),rev={};COINS.forEach(c=>rev[(f?tsym(c.s):c.s)+'USDT']=c.s);
     const r=await fetch(f?'https://fapi.binance.com/fapi/v1/ticker/24hr':`${API}/api/v3/ticker/24hr?symbols=${encodeURIComponent(JSON.stringify(Object.keys(rev)))}`);if(!r.ok)return;
     (await r.json()).forEach(t=>{const s=rev[t.symbol];if(!s)return;const m=!f&&S.mode==='futures'&&FSYM[s]?1000:1;st.P[s]={price:t.lastPrice*m,ch:+t.priceChangePercent}})}catch(e){}}
+function candlePrices(){ // запасний варіант: ціна з останньої свічки, зміна приблизно за 24 год
+  const s=ST(),n=Math.round(86400/TF[s.main]);COINS.forEach(c=>{if(st.P[c.s])return;const k=L[c.s]&&L[c.s][s.main];if(!k||k.length<2)return;const l=k[k.length-1].c,o=k[Math.max(0,k.length-1-n)].o;st.P[c.s]={price:l,ch:(l-o)/o*100}})}
 async function ping(u){try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),3500);const r=await fetch(u,{signal:ctl.signal});clearTimeout(to);return r.ok}catch(e){return false}}
 async function detect(){
   const [a,b,f]=await Promise.all([ping('https://api.binance.com/api/v3/ping'),ping('https://data-api.binance.vision/api/v3/ping'),ping('https://fapi.binance.com/fapi/v1/ping')]);
@@ -673,7 +677,7 @@ function openSheet(html){document.getElementById('sheet').innerHTML='<div class=
 function closeSheet(){document.getElementById('sheetBg').classList.remove('on')}
 function fld(id,label,val,hint,step){return `<div class="fld"><label>${label}</label><input id="${id}" type="number" inputmode="decimal" step="${step||'any'}" value="${val}">${hint?`<small>${hint}</small>`:''}</div>`}
 function settingsHtml(onb){
-  return `<h3>${onb?'Ласкаво просимо 👋':'Налаштування'}</h3>${onb?`<p>Введи свій банк і бажаний заробіток на день. Додаток розрахує розмір позиції, плече, стоп і тейк під тебе.</p>`:''}
+  return `<h3>${onb?'Ласкаво просимо 👋':'Налаштування'} <span class="note" style="font-family:Manrope;font-weight:600">v${VERSION}</span></h3>${onb?`<p>Введи свій банк і бажаний заробіток на день. Додаток розрахує розмір позиції, плече, стоп і тейк під тебе.</p>`:''}
   ${fld('s_bank','Банк, $',+bankNow().toFixed(2),'Скільки грошей зараз на торговому рахунку')}
   ${fld('s_goal','Ціль на день, $',S.goal,`Це ${(S.goal/bankNow()*100).toFixed(1)}% банку на день. Для довідки: 1% на день уже дуже сильний результат.`)}
   ${fld('s_risk','Ризик на угоду, % банку',S.risk,'Рекомендовано 1–2%. Більше 3% новачку не варто.','0.5')}
