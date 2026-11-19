@@ -237,17 +237,21 @@ async function fetchK(sym,tf,limit=300){
   const m=!f&&S.mode==='futures'&&FSYM[sym]?1000:1; // спотові ціни PEPE/SHIB переводимо в одиниці ф'ючерсу 1000PEPE/1000SHIB
   return j.map(k=>({t:k[0]/1000,o:k[1]*m,h:k[2]*m,l:k[3]*m,c:k[4]*m,v:k[5]/m}))}
 async function loadTf(sym,tf){try{(L[sym]=L[sym]||{})[tf]=await fetchK(sym,tf)}catch(e){}}
-async function liveRefresh(){const s=ST();for(let i=0;i<COINS.length;i+=6){await Promise.all(COINS.slice(i,i+6).flatMap(c=>[loadTf(c.s,s.main),loadTf(c.s,s.high)]))}
+async function liveRefresh(){const s=ST();loadTickers();for(let i=0;i<COINS.length;i+=6){await Promise.all(COINS.slice(i,i+6).flatMap(c=>[loadTf(c.s,s.main),loadTf(c.s,s.high)]))}
   if(![s.main,s.high].includes(st.chartTf))await loadTf(st.chartSym,st.chartTf)}
 function liveWS(){
   if(WS){WS.onclose=null;try{WS.close()}catch(e){}}
   const f=useF(),rev={};COINS.forEach(c=>rev[(f?tsym(c.s):c.s)+'USDT']=c.s);
   const url=(f?'wss://fstream.binance.com/stream?streams=':'wss://stream.binance.com:9443/stream?streams=')+Object.keys(rev).map(x=>x.toLowerCase()+'@miniTicker').join('/');
   const ws=WS=new WebSocket(url);
-  ws.onmessage=e=>{const d=JSON.parse(e.data).data;if(!d)return;const s=rev[d.s];if(!s)return;const m=!f&&S.mode==='futures'&&FSYM[s]?1000:1,c=d.c*m,o=d.o*m;st.P[s]={price:c,ch:(c-o)/o*100};
+  ws.onmessage=e=>{const d=JSON.parse(e.data).data;if(!d)return;st.lastWs=Date.now();const s=rev[d.s];if(!s)return;const m=!f&&S.mode==='futures'&&FSYM[s]?1000:1,c=d.c*m,o=d.o*m;st.P[s]={price:c,ch:(c-o)/o*100};
     const mm=L[s];if(mm)for(const tf in mm){const a=mm[tf];if(a&&a.length){const l=a[a.length-1];l.c=c;l.h=Math.max(l.h,c);l.l=Math.min(l.l,c)}}};
   ws.onclose=()=>setTimeout(()=>{if(WS===ws)liveWS()},3000);
 }
+async function loadTickers(){ // ціни і зміна за 24 год через REST: працює навіть якщо WebSocket мовчить
+  try{const f=useF(),rev={};COINS.forEach(c=>rev[(f?tsym(c.s):c.s)+'USDT']=c.s);
+    const r=await fetch(f?'https://fapi.binance.com/fapi/v1/ticker/24hr':`${API}/api/v3/ticker/24hr?symbols=${encodeURIComponent(JSON.stringify(Object.keys(rev)))}`);if(!r.ok)return;
+    (await r.json()).forEach(t=>{const s=rev[t.symbol];if(!s)return;const m=!f&&S.mode==='futures'&&FSYM[s]?1000:1;st.P[s]={price:t.lastPrice*m,ch:+t.priceChangePercent}})}catch(e){}}
 async function ping(u){try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),3500);const r=await fetch(u,{signal:ctl.signal});clearTimeout(to);return r.ok}catch(e){return false}}
 async function detect(){
   const [a,b,f]=await Promise.all([ping('https://api.binance.com/api/v3/ping'),ping('https://data-api.binance.vision/api/v3/ping'),ping('https://fapi.binance.com/fapi/v1/ping')]);
@@ -750,7 +754,7 @@ try{if('serviceWorker' in navigator&&location.protocol==='https:'&&!/claude\.ai|
 (async function start(){
   renderTop();document.getElementById('v-signals').innerHTML='<div class="empty">Завантаження ринку…</div>';
   const m0=S.mode,cloud=cloudInit();
-  if(await detect()){st.src='live';await liveRefresh();liveWS();setInterval(liveRefresh,90000)}else{st.src='demo';demoInit()}
+  if(await detect()){st.src='live';await liveRefresh();liveWS();setInterval(liveRefresh,90000);setInterval(()=>{if(Date.now()-(st.lastWs||0)>8000)loadTickers()},10000)}else{st.src='demo';demoInit()}
   scan();scanNotify();renderAll();setInterval(loop,1000);
   await cloud;st.mode=S.mode;st.chartTf=ST().main;if(S.mode!==m0)reloadMarket();renderAll();
   if(!S.onboarded)openSheet(settingsHtml(true));
