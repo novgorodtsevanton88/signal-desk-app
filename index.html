@@ -13,22 +13,22 @@
 <link rel="icon" type="image/png" href="icon-192.png">
 <title>Signal Desk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 :root{--bg:#0a0d14;--bg2:#0f1320;--card:#141a29;--card2:#1a2133;--line:#232b40;--tx:#eef1f7;--mut:#8b94a8;--mut2:#5d6579;--up:#1fd286;--upbg:rgba(31,210,134,.12);--dn:#ff4d6a;--dnbg:rgba(255,77,106,.12);--acc:#8b6cff;--accbg:rgba(139,108,255,.14);--amb:#ffb547;--ambbg:rgba(255,181,71,.13);--r:16px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--tx);font-family:Manrope,system-ui,sans-serif;font-size:15px}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:Onest,system-ui,-apple-system,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
 body{background:radial-gradient(1200px 500px at 50% -200px,#1b1640 0%,var(--bg) 60%) fixed}
 button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer}
 input,select,textarea{font-family:inherit;font-size:16px;color:var(--tx);background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;width:100%;outline:none}
 input:focus,select:focus,textarea:focus{border-color:var(--acc)}
-.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.mono{font-family:Inter,system-ui,sans-serif;font-feature-settings:'tnum' 1,'cv11' 1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 #app{max-width:560px;margin:0 auto;padding:0 14px 96px}
 .top{display:flex;align-items:center;justify-content:space-between;padding:14px 2px 10px;position:sticky;top:0;z-index:5;background:linear-gradient(var(--bg) 70%,transparent)}
 .brand{display:flex;gap:10px;align-items:center}
 .logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#8b6cff,#1fd286);display:grid;place-items:center;font-weight:800;color:#0a0d14;font-size:18px}
-.bt{font-family:Unbounded,sans-serif;font-weight:700;font-size:16px;letter-spacing:.2px}
+.bt{font-family:Onest,sans-serif;font-weight:800;font-size:18px;letter-spacing:-.03em}
 .pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;margin-top:3px}
 .pill i{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
 .pill.live{color:var(--up);background:var(--upbg)}.pill.demo{color:var(--amb);background:var(--ambbg)}.pill.load{color:var(--mut);background:var(--card)}
@@ -37,7 +37,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--acc)}
 .bankbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 11px}
 .kpi .l{font-size:11px;color:var(--mut);font-weight:600}
-.kpi .v{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;margin-top:3px}
+.kpi .v{font-family:Inter,system-ui,sans-serif;font-feature-settings:'tnum' 1,'cv11' 1;letter-spacing:-.02em;font-weight:700;font-size:16px;margin-top:3px}
 .bar{height:5px;background:var(--bg2);border-radius:9px;margin-top:7px;overflow:hidden}.bar b{display:block;height:100%;border-radius:9px;background:var(--up)}
 .banner{border-radius:14px;padding:11px 13px;font-size:13.5px;font-weight:600;margin-bottom:12px;line-height:1.4}
 .banner.red{background:var(--dnbg);color:#ff8fa2;border:1px solid rgba(255,77,106,.3)}
@@ -46,7 +46,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--acc)}
 .banner.acc{background:var(--accbg);color:#c6b8ff;border:1px solid rgba(139,108,255,.3)}
 .view{display:none}.view.on{display:block;animation:fade .25s ease}
 @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-h2{font-family:Unbounded,sans-serif;font-size:17px;font-weight:700;margin:6px 2px 4px}
+h2{font-family:Onest,sans-serif;letter-spacing:-.03em;font-size:22px;font-weight:800;margin:6px 2px 4px}
 .sub{color:var(--mut);font-size:13px;margin:0 2px 12px}
 .chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
 .chip{padding:8px 13px;border-radius:99px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:700;white-space:nowrap;color:var(--mut)}
@@ -54,29 +54,38 @@ h2{font-family:Unbounded,sans-serif;font-size:17px;font-weight:700;margin:6px 2p
 .coin{display:flex;align-items:center;gap:11px;padding:12px;border-radius:14px;background:var(--card);border:1px solid var(--line);margin-bottom:8px;width:100%;text-align:left}
 .cic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;flex:none}
 .cn{flex:1;min-width:0}.cn b{font-size:15px}.cn small{display:block;color:var(--mut);font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cp{text-align:right;min-width:92px}.cp .p{font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:600}.cp .c{font-size:12px;font-weight:700;margin-top:2px}
+.cp{text-align:right;min-width:92px}.cp .p{font-family:Inter,system-ui,sans-serif;font-feature-settings:'tnum' 1,'cv11' 1;letter-spacing:-.02em;font-size:13.5px;font-weight:600}.cp .c{font-size:12px;font-weight:700;margin-top:2px}
 .up{color:var(--up)}.dn{color:var(--dn)}.mu{color:var(--mut)}
 .sig{width:86px;flex:none;text-align:right}
 .badge{display:inline-block;font-size:11px;font-weight:800;padding:4px 8px;border-radius:8px;letter-spacing:.3px}
 .badge.L{background:var(--upbg);color:var(--up)}.badge.S{background:var(--dnbg);color:var(--dn)}.badge.W{background:var(--card2);color:var(--mut)}
 .cbar{height:4px;border-radius:9px;background:var(--bg2);margin-top:6px;overflow:hidden}.cbar b{display:block;height:100%}
-.cf{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mut);margin-top:3px}
+.cf{font-family:Inter,system-ui,sans-serif;font-feature-settings:'tnum' 1,'cv11' 1;letter-spacing:-.02em;font-size:11px;color:var(--mut);margin-top:3px}
 .hero{display:flex;align-items:center;gap:14px}
 .ring{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;flex:none}
 .ring>div{width:62px;height:62px;border-radius:50%;background:var(--card);display:grid;place-items:center;text-align:center}
-.ring b{font-family:'JetBrains Mono',monospace;font-size:18px;display:block}.ring small{font-size:9.5px;color:var(--mut);font-weight:700}
-.dirt{font-family:Unbounded,sans-serif;font-size:20px;font-weight:700}
+.ring b{font-family:Inter,system-ui,sans-serif;font-feature-settings:'tnum' 1,'cv11' 1;letter-spacing:-.02em;font-size:18px;display:block}.ring small{font-size:8px;letter-spacing:.02em;color:var(--mut);font-weight:700}
+.dirt{font-family:Onest,sans-serif;letter-spacing:-.03em;font-size:24px;font-weight:800}
 .seg{display:flex;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
 .seg button{flex:1;padding:9px 6px;border-radius:9px;font-size:13px;font-weight:700;color:var(--mut)}
 .seg button.on{background:var(--card2);color:var(--tx);box-shadow:0 1px 0 rgba(255,255,255,.05) inset}
-.lbl{font-size:12px;color:var(--mut);font-weight:700;margin:12px 2px 6px;text-transform:uppercase;letter-spacing:.6px}
+.lbl{font-size:11.5px;color:var(--mut);font-weight:600;margin:16px 2px 7px;text-transform:uppercase;letter-spacing:.09em}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .cell{background:var(--bg2);border:1px solid var(--line);border-radius:13px;padding:10px 11px;position:relative}
 .cell .l{font-size:11.5px;color:var(--mut);font-weight:600;display:flex;align-items:center;gap:5px}
-.cell .v{font-family:'JetBrains Mono',monospace;font-size:15.5px;font-weight:700;margin-top:4px;word-break:break-all}
+.cell .v{font-family:Inter,system-ui,sans-serif;font-feature-settings:'tnum' 1,'cv11' 1;letter-spacing:-.02em;font-size:15.5px;font-weight:700;margin-top:4px;word-break:break-all}
 .cell .s{font-size:11.5px;margin-top:2px;font-weight:600}
 .q{width:17px;height:17px;border-radius:50%;background:var(--card2);color:var(--mut);font-size:10.5px;font-weight:800;display:inline-grid;place-items:center;flex:none}
 .cell.full{grid-column:1/-1}
+.sum{background:linear-gradient(160deg,#1b2238,#141a29);border:1px solid #2c3550;border-radius:18px;padding:16px;margin-top:12px}
+.sum .k{font-size:12.5px;color:var(--mut);font-weight:600}
+.sum .main{font-family:Inter,sans-serif;font-feature-settings:'tnum' 1;font-size:34px;font-weight:800;letter-spacing:-.035em;margin:4px 0 2px}
+.sum .main small{font-size:15px;font-weight:700;color:var(--mut);letter-spacing:0;margin-left:6px}
+.sum .hint{font-size:13px;color:#b9c0cf;line-height:1.45}
+.sum .row3{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid #2a3248}
+.sum .row3 .v{font-family:Inter,sans-serif;font-feature-settings:'tnum' 1;font-size:19px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+details.more{margin-top:10px}details.more summary{list-style:none;cursor:pointer;color:#c6b8ff;font-weight:600;font-size:13.5px;padding:8px 2px}
+details.more summary::-webkit-details-marker{display:none}
 .btn{width:100%;padding:14px;border-radius:14px;font-weight:800;font-size:15px;background:var(--acc);color:#fff;margin-top:10px}
 .btn.g{background:var(--up);color:#062a19}.btn.r{background:var(--dn)}.btn.o{background:transparent;border:1px solid var(--line);color:var(--tx)}
 .btn.sm{padding:10px;font-size:13px;margin-top:0;border-radius:11px}
@@ -84,18 +93,18 @@ h2{font-family:Unbounded,sans-serif;font-size:17px;font-weight:700;margin:6px 2p
 .steps li{counter-increment:s;position:relative;padding:8px 0 8px 36px;font-size:14px;line-height:1.45;border-bottom:1px dashed var(--line)}
 .steps li:last-child{border:0}
 .steps li:before{content:counter(s);position:absolute;left:0;top:8px;width:24px;height:24px;border-radius:8px;background:var(--accbg);color:#c6b8ff;font-weight:800;font-size:12px;display:grid;place-items:center}
-.steps b{font-family:'JetBrains Mono',monospace;font-weight:700}
+.steps b{font-family:Inter,system-ui,sans-serif;font-feature-settings:'tnum' 1,'cv11' 1;letter-spacing:-.02em;font-weight:700}
 .ind{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:flex-start}
 .ind:last-child{border:0}
 .ind .dot{width:30px;height:22px;border-radius:7px;font-size:11px;font-weight:800;display:grid;place-items:center;flex:none;margin-top:1px}
 .ind .t b{font-size:13.5px}.ind .t small{display:block;color:var(--mut);font-size:12.5px;line-height:1.4;margin-top:2px}
-.ind .val{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mut);white-space:nowrap;padding-left:6px}
+.ind .val{margin-left:auto;font-family:Inter,system-ui,sans-serif;font-feature-settings:'tnum' 1,'cv11' 1;letter-spacing:-.02em;font-size:12px;color:var(--mut);white-space:nowrap;padding-left:6px}
 #chartBox{height:360px;border-radius:var(--r);background:var(--card);border:1px solid var(--line);overflow:hidden;margin-bottom:12px;position:relative}
 .tr{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:9px}
 .trh{display:flex;align-items:center;gap:9px}
 .trh .m{margin-left:auto;text-align:right}
 .trg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0 4px}
-.trg div{font-size:11px;color:var(--mut)}.trg b{display:block;font-family:'JetBrains Mono',monospace;color:var(--tx);font-size:12px;margin-top:2px;font-weight:600;word-break:break-all}
+.trg div{font-size:11px;color:var(--mut)}.trg b{display:block;font-family:Inter,system-ui,sans-serif;font-feature-settings:'tnum' 1,'cv11' 1;letter-spacing:-.02em;color:var(--tx);font-size:12px;margin-top:2px;font-weight:600;word-break:break-all}
 .acts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
 .tabs{position:fixed;bottom:0;left:0;right:0;background:rgba(10,13,20,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:10;padding-bottom:env(safe-area-inset-bottom)}
 .tabs>div{display:flex;max-width:560px;width:100%}
@@ -107,12 +116,12 @@ h2{font-family:Unbounded,sans-serif;font-size:17px;font-weight:700;margin:6px 2p
 .sheet{background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:22px 22px 0 0;width:100%;max-width:560px;max-height:88vh;overflow:auto;padding:8px 18px 28px;animation:up .25s ease}
 @keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
 .grab{width:42px;height:5px;border-radius:9px;background:var(--line);margin:4px auto 12px}
-.sheet h3{font-family:Unbounded,sans-serif;font-size:16px;margin:4px 0 10px}
+.sheet h3{font-family:Onest,sans-serif;letter-spacing:-.025em;font-size:16px;margin:4px 0 10px}
 .sheet p{color:#c9cfdb;line-height:1.55;font-size:14.5px;margin:0 0 10px}
 .fld{margin-bottom:12px}.fld label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}.fld small{display:block;color:var(--mut);font-size:12px;margin-top:5px;line-height:1.4}
 .row{display:flex;gap:8px;align-items:center}
 .stat{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.big{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700}
+.big{font-family:Inter,system-ui,sans-serif;font-feature-settings:'tnum' 1,'cv11' 1;letter-spacing:-.02em;font-size:26px;font-weight:700}
 canvas{display:block;width:100%}
 .empty{text-align:center;color:var(--mut);padding:26px 10px;font-size:14px;line-height:1.5}
 .note{font-size:12.5px;color:var(--mut);line-height:1.5}
@@ -157,7 +166,7 @@ input[type=file]{font-size:13px;padding:10px}
 const COINS=[['BTC','Bitcoin',95000],['ETH','Ethereum',3300],['BNB','BNB',900],['SOL','Solana',180],['XRP','XRP',2.3],['DOGE','Dogecoin',0.2],['ADA','Cardano',0.7],['TRX','TRON',0.3],['AVAX','Avalanche',25],['LINK','Chainlink',18],['TON','Toncoin',3],['DOT','Polkadot',4],['SUI','Sui',3.2],['LTC','Litecoin',100],['BCH','Bitcoin Cash',500],['NEAR','NEAR Protocol',2.8],['APT','Aptos',5],['UNI','Uniswap',9],['ICP','Internet Computer',5],['XLM','Stellar',0.35],['ETC','Ethereum Classic',18],['HBAR','Hedera',0.22],['FIL','Filecoin',2.8],['ATOM','Cosmos',4.5],['ARB','Arbitrum',0.4],['OP','Optimism',0.7],['INJ','Injective',13],['AAVE','Aave',280],['PEPE','Pepe',0.00001],['SHIB','Shiba Inu',0.000013],['ZEC','Zcash',300],['ENA','Ethena',0.5],['TAO','Bittensor',400],['WLD','Worldcoin',1],['TRUMP','Official Trump',8],['QNT','Quant',90],['ONDO','Ondo',0.8],['PENGU','Pudgy Penguins',0.02],['FET','Fetch.ai (ASI)',0.5],['WLFI','World Liberty Financial',0.15],['KAVA','Kava',0.3],['LUNC','Terra Classic',0.00005],['RUNE','THORChain',1],['ZK','ZKsync',0.05],['BONK','Bonk',0.00002],['STRK','Starknet',0.15],['DASH','Dash',50],['PENDLE','Pendle',3],['RENDER','Render',2],['XPL','Plasma',0.3],['MMT','Momentum',0.5],['ZKC','Boundless',0.2],['HUMA','Huma Finance',0.03],['SOPH','Sophon',0.03],['HEI','Heima',0.4],['SHELL','MyShell',0.1],['USUAL','Usual',0.05],['KITE','Kite',0.1],['INIT','Initia',0.2],['BMT','Bubblemaps',0.05]]
 .map(([s,n,p],i)=>({s,n,p,vol:s==='BTC'?.0018:['ETH','BNB','TRX','LTC','BCH','XLM'].includes(s)?.0025:['PEPE','SHIB','DOGE','INJ','SUI','APT','ARB','OP'].includes(s)?.0045:i>=30?.005:.0035}));
 const CM=Object.fromEntries(COINS.map(c=>[c.s,c]));
-const VERSION='4.1';
+const VERSION='4.2';
 const DEF={bank:250,goal:20,risk:1,maxLev:10,marginPct:25,mode:'futures',feeMaker:0.02,feeTaker:0.05,feeSpot:0.1,dailyLoss:6,maxTrades:4,minConf:65,onboarded:false,bankSetAt:Date.now(),style:'calm',tpMode:'one'};
 const STYLES={calm:{main:'1h',high:'4h',expiry:4,expTxt:'4 години',hold:72,name:'Спокійний',lbl:'1 год'},active:{main:'15m',high:'1h',expiry:4,expTxt:'1 годину',hold:96,name:'Активний',lbl:'15 хв'}};
 const ST=()=>STYLES[S.style]||STYLES.calm;
@@ -417,23 +426,29 @@ function curPlan(){const a=st.sig[st.sel];if(!a)return null;let dir=a.dir;if(st.
 function cell(l,v,s,cls,help,full){return `<div class="cell ${full?'full':''}"><div class="l">${l}${help?` <span class="q" data-act="help" data-arg="${help}">?</span>`:''}</div><div class="v ${cls||''}">${v}</div>${s?`<div class="s">${s}</div>`:''}</div>`}
 function segMode(){return `<div class="lbl">Ринок</div><div class="seg"><button class="${st.mode==='futures'?'on':''}" data-act="mode" data-arg="futures">Ф'ючерси</button><button class="${st.mode==='spot'?'on':''}" data-act="mode" data-arg="spot">Спот</button></div>`}
 function segEntry(lbl){return `<div class="lbl">${lbl} <span class="q" data-act="help" data-arg="entry">?</span></div><div class="seg"><button class="${st.entryType==='limit'?'on':''}" data-act="entry" data-arg="limit">Лімітка (краща ціна)</button><button class="${st.entryType==='market'?'on':''}" data-act="entry" data-arg="market">Зараз по ринку</button></div>`}
-function planCells(plan,p){const rr=plan.pnlTP/plan.riskUsd;
-  return `<div class="lbl">Параметри</div><div class="grid2">
+function planCells(plan,p){const rr=plan.pnlTP/plan.riskUsd,fut=plan.mode==='futures',pctBank=plan.margin/bankNow()*100;
+  return `<div class="sum">
+   <div class="k">${fut?'Закладаєш на угоду (застава)':'Купуєш на суму'}</div>
+   <div class="main">${(fut?plan.margin:plan.notional).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}<small>USDT</small></div>
+   <div class="hint">${fut?`Це ${pctBank.toFixed(0)}% твого банку. Біржа заблокує цю суму, поки угода відкрита. З плечем <b>${plan.lev}x</b> позиція працює як ${fu(plan.notional)}.`:'Плеча немає: позиція дорівнює сумі покупки.'}</div>
+   <div class="row3">
+    <div><div class="k">Якщо спрацює стоп</div><div class="v dn">${fu(plan.pnlSL,1)}</div><div class="k" style="font-weight:500">${(-plan.pnlSL/bankNow()*100).toFixed(1)}% банку</div></div>
+    <div><div class="k">Якщо спрацює тейк</div><div class="v up">${fu(plan.pnlTP,1)}</div><div class="k" style="font-weight:500">${plan.tpMode==='one'?'вся позиція':'обидва тейки'}</div></div>
+   </div></div>
+  <div class="lbl">Ціни для ордера</div><div class="grid2">
   ${cell('Вхід',fp(plan.entry),plan.entryType==='limit'&&p?`<span class="mu">лімітка · ${pct((plan.entry-p.price)/p.price*100)} від ціни</span>`:'<span class="mu">по ринку</span>','','entry')}
-  ${cell('Плече',plan.mode==='spot'?'1x':plan.lev+'x',plan.mode==='spot'?'<span class="mu">без плеча</span>':'<span class="mu">ізольована маржа</span>','','lev')}
-  ${cell('Стоп-лосс',fp(plan.sl),`<span class="dn">${pct(-plan.distPct)} · ${fu(plan.pnlSL,1)}</span>`,'dn','sl')}
-  ${plan.tpMode==='one'?cell('Тейк-профіт',fp(plan.tp1),`<span class="up">${pct(plan.distPct*plan.rr)} · вся позиція</span>`,'up','tp'):
+  ${cell('Плече',plan.mode==='spot'?'1x':plan.lev+'x',plan.mode==='spot'?'<span class="mu">без плеча</span>':'<span class="mu">маржа ізольована</span>','','lev')}
+  ${cell('Стоп-лосс',fp(plan.sl),`<span class="dn">${pct(-plan.distPct)} від входу</span>`,'dn','sl')}
+  ${plan.tpMode==='one'?cell('Тейк-профіт',fp(plan.tp1),`<span class="up">${pct(plan.distPct*plan.rr)} від входу</span>`,'up','tp'):
   cell('Тейк 1 (50%)',fp(plan.tp1),`<span class="up">${pct(plan.distPct*1.5)}</span>`,'up','tp')+cell('Тейк 2 (50%)',fp(plan.tp2),`<span class="up">${pct(plan.distPct*2.5)}</span>`,'up','tp')}
-  ${cell('Ризик / прибуток','1 : '+rr.toFixed(1),`<span class="mu">ризик ${fu(plan.riskUsd)}</span>`,'','rr')}
-  ${cell('Розмір позиції',fu(plan.notional),`<span class="mu">${fq(plan.qty)} ${tsym(plan.sym)}</span>`,'','size')}
-  ${cell('Застава (маржа)',fu(plan.margin),`<span class="mu">${(plan.margin/bankNow()*100).toFixed(0)}% банку</span>`,'','margin')}
-  ${plan.mode==='futures'?cell('Ліквідація',fp(plan.liq),'<span class="mu">далі за стоп ✓</span>','','liq'):cell('Ліквідація','немає','<span class="mu">на споті не буває</span>','','liq')}
-  ${cell('Комісія',fu(plan.feeTP),'<span class="mu">вхід + вихід</span>','','fee')}
   </div>
-  <div class="lbl">Що буде в кінці</div><div class="grid2">
-  ${plan.tpMode==='one'?cell('Тейк-профіт',fu(plan.pnlTP,1),'<span class="mu">вже з комісією</span>','up')+cell('Стоп-лосс',fu(plan.pnlSL,1),'<span class="mu">максимальний збиток</span>','dn'):
-  cell('Обидва тейки',fu(plan.pnlTP,1),'<span class="mu">вже з комісією</span>','up')+cell('Тейк 1, далі беззбиток',fu(plan.pnlBE,1),'<span class="mu">половина прибутку</span>',plan.pnlBE>=0?'up':'dn')+cell('Стоп-лосс',fu(plan.pnlSL,1),'<span class="mu">максимальний збиток</span>','dn',null,true)}
-  </div>`}
+  <details class="more"><summary>Деталі угоди ▾</summary><div class="grid2">
+  ${cell('Розмір позиції',fu(plan.notional),`<span class="mu">з плечем · ${fq(plan.qty)} ${tsym(plan.sym)}</span>`,'','size')}
+  ${cell('Ризик / прибуток','1 : '+rr.toFixed(1),'<span class="mu">скільки заробляєш на 1$ ризику</span>','','rr')}
+  ${fut?cell('Ліквідація',fp(plan.liq),'<span class="mu">далі за стоп ✓</span>','','liq'):cell('Ліквідація','немає','<span class="mu">на споті не буває</span>','','liq')}
+  ${cell('Комісія біржі',fu(plan.feeTP),'<span class="mu">уже врахована</span>','','fee')}
+  ${plan.tpMode==='two'?cell('Тейк 1, далі беззбиток',fu(plan.pnlBE,1),'<span class="mu">половина прибутку</span>',plan.pnlBE>=0?'up':'dn',null,true):''}
+  </div></details>`}
 function guards(plan){const t=today(),lim=bankNow()*S.dailyLoss/100;let h='';
   if(plan.notes.length)h+=`<div class="banner amb" style="margin-top:12px">${plan.notes.join('<br>')}</div>`;
   if(S.risk>2)h+=`<div class="banner red" style="margin-top:12px">Ризик ${S.risk}% на угоду забагато. Рекомендовано 1%: так просідання лишається в розумних межах. Змінити: ⚙ → «Ризик на угоду».</div>`;
@@ -441,7 +456,7 @@ function guards(plan){const t=today(),lim=bankNow()*S.dailyLoss/100;let h='';
   else if(t.count>=S.maxTrades)h+=`<div class="banner amb" style="margin-top:12px">Ліміт угод на сьогодні (${S.maxTrades}) вичерпано.</div>`;
   return h}
 function stepsFor(plan){
-  const one=plan.tpMode==='one',ex=ST().expTxt,order=`${plan.entryType==='limit'?'Обери <b>Лімітний</b> ордер, ціна':'Обери <b>Ринковий</b> ордер, орієнтир'} <b>${fp(plan.entry)}</b>, кількість <b>${fq(plan.qty)} ${tsym(plan.sym)}</b> (≈ ${fu(plan.notional)}).`;
+  const one=plan.tpMode==='one',ex=ST().expTxt,M=x=>x.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),order=`${plan.entryType==='limit'?'Тип ордера <b>Ліміт</b>, ціна':'Тип ордера <b>Ринок</b> (орієнтир ціни'} <b>${fp(plan.entry)}</b>${plan.entryType==='limit'?'':')'}. У полі «Розмір» перемкни одиницю на <b>USDT</b> і введи <b>${M(plan.margin)} USDT</b> як заставу (Cost / Початкова маржа).<br><span class="mu">Якщо Binance просить вартість ордера (Order value), введи <b>${M(plan.notional)} USDT</b>, це те саме.</span>`;
   const steps=plan.mode==='futures'?(one?[
     `Binance → <b>Ф'ючерси USDⓈ-M</b> → <b>${tsym(plan.sym)}USDT</b>, маржа <b>Ізольована</b>, плече <b>${plan.lev}x</b>.`,
     order,
@@ -455,7 +470,7 @@ function stepsFor(plan){
     `Коли спрацює Тейк 1, перенеси стоп на <b>${fp(plan.entry)}</b> (беззбиток).`,
     plan.entryType==='limit'?`Якщо лімітка не виконалась за ${ex}, скасуй її.`:`Не відсувай стоп.`]):[
     `Binance → <b>Спот</b> → <b>${plan.sym}/USDT</b>.`,
-    `${plan.entryType==='limit'?'<b>Лімітна</b> купівля за':'<b>Ринкова</b> купівля, орієнтир'} <b>${fp(plan.entry)}</b>, кількість <b>${fq(plan.qty)} ${tsym(plan.sym)}</b> (≈ ${fu(plan.notional)}).`,
+    `${plan.entryType==='limit'?'<b>Ліміт</b>, ціна купівлі':'<b>Ринок</b>, орієнтир'} <b>${fp(plan.entry)}</b>. У полі «Сума» (Total) введи <b>${M(plan.notional)} USDT</b>.`,
     one?`Після покупки постав <b>OCO-ордер</b> на всю кількість: ліміт (тейк) <b>${fp(plan.tp1)}</b>, стоп <b>${fp(plan.sl)}</b>. Далі можна не стежити.`:`Після покупки постав <b>OCO</b> на половину: тейк <b>${fp(plan.tp1)}</b>, стоп <b>${fp(plan.sl)}</b>. На другу половину: тейк <b>${fp(plan.tp2)}</b>, стоп <b>${fp(plan.sl)}</b>.`,
     plan.entryType==='limit'?`Якщо лімітка не виконалась за ${ex}, скасуй її.`:`Не чіпай угоду до стопу або тейку.`];
   return `<div class="lbl">Як відкрити на біржі</div><div class="card"><ol class="steps">${steps.map(x=>`<li>${x}</li>`).join('')}</ol></div>`}
@@ -510,7 +525,7 @@ function renderMineOut(){const el=document.getElementById('mineOut');if(!el)retu
 let CH=null,cS,e21S,e200S,lines=[],chKey='',chLen=0;
 function initChart(){
   if(CH||!window.LightweightCharts){if(!window.LightweightCharts)document.getElementById('chartBox').innerHTML='<div class="empty">Бібліотеку графіків не вдалося завантажити.</div>';return}
-  CH=LightweightCharts.createChart(document.getElementById('chartBox'),{autoSize:true,layout:{background:{type:'solid',color:'transparent'},textColor:'#8b94a8',fontFamily:'JetBrains Mono',fontSize:11},
+  CH=LightweightCharts.createChart(document.getElementById('chartBox'),{autoSize:true,layout:{background:{type:'solid',color:'transparent'},textColor:'#8b94a8',fontFamily:'Inter',fontSize:11},
     grid:{vertLines:{color:'#1a2030'},horzLines:{color:'#1a2030'}},rightPriceScale:{borderColor:'#232b40'},timeScale:{borderColor:'#232b40',timeVisible:true},crosshair:{mode:0}});
   cS=CH.addCandlestickSeries({upColor:'#1fd286',downColor:'#ff4d6a',borderVisible:false,wickUpColor:'#1fd286',wickDownColor:'#ff4d6a'});
   e21S=CH.addLineSeries({color:'#8b6cff',lineWidth:2,priceLineVisible:false,lastValueVisible:false});
@@ -556,7 +571,7 @@ function renderJournal(){
   if(!J.length)h+=`<div class="empty">Тут з'являться твої угоди.<br>Записуй кожну, бо без журналу не видно помилок.</div>`;
   if(open.length)h+='<div class="lbl">Відкриті</div>';
   open.forEach(t=>{const u=upnl(t);
-    h+=`<div class="tr"><div class="trh">${cic(t.sym)}<div><b>${t.sym}</b> <span class="badge ${t.dir>0?'L':'S'}">${t.dir>0?'ЛОНГ':'ШОРТ'}</span><div class="note">${t.mode==='spot'?'Спот':t.lev+'x'} · ${new Date(t.openedAt).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div>
+    h+=`<div class="tr"><div class="trh">${cic(t.sym)}<div><b>${t.sym}</b> <span class="badge ${t.dir>0?'L':'S'}">${t.dir>0?'ЛОНГ':'ШОРТ'}</span><div class="note">${t.mode==='spot'?'Спот':t.lev+'x · застава '+fu(t.margin||t.notional/t.lev)} · ${new Date(t.openedAt).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div>
     <div class="m"><div class="mono ${u>=0?'up':'dn'}" id="u-${t.id}" style="font-weight:700">${fu(u,1)}</div><div class="note">зараз</div></div></div>
     <div class="trg"><div>Вхід<b>${fp(t.entry)}</b></div><div>Стоп<b class="dn">${fp(t.sl)}</b></div>${t.tpMode==='one'?`<div>Тейк<b class="up">${fp(t.tp1)}</b></div><div>Плече<b>${t.mode==='spot'?'—':t.lev+'x'}</b></div>`:`<div>Тейк 1<b class="up">${fp(t.tp1)}</b></div><div>Тейк 2<b class="up">${fp(t.tp2)}</b></div>`}</div>`;
     if(st.closing===t.id)h+=`<div class="row" style="margin-top:8px"><input id="mx-${t.id}" type="number" inputmode="decimal" step="any" placeholder="Ціна виходу" value="${st.P[t.sym]?+st.P[t.sym].price.toPrecision(6):''}"><button class="btn sm" style="width:auto;padding:12px 16px" data-act="manualDo" data-arg="${t.id}">OK</button></div>`;
@@ -720,8 +735,8 @@ entry:['Краща точка входу','<p><b>Лімітка</b>: ордер 
 liq:['Ліквідація','<p>Ціна, на якій біржа примусово закриває позицію і забирає всю заставу. Вона завжди має бути далі, ніж твій стоп-лосс. Додаток це перевіряє.</p><p>Використовуй <b>ізольовану</b> маржу: тоді під ризиком лише застава цієї угоди, а не весь рахунок.</p>'],
 fee:['Комісія','<p>Біржа бере відсоток з розміру позиції на вході й на виході. Лімітний ордер (maker) дешевший, ринковий (taker) дорожчий. Ставки змінюються в налаштуваннях.</p><p>Усі суми прибутку і збитку в додатку вже з урахуванням комісії.</p>'],
 risk:['Ризик на угоду','<p>Скільки доларів ти втрачаєш, якщо спрацює стоп. Рекомендовано 1–2% банку.</p><p>При 2% навіть 10 стопів поспіль забирають близько 18% депозиту, і це можна відновити. При 10% на угоду 5 стопів поспіль забирають половину рахунку.</p>'],
-margin:['Застава (маржа)','<p>Скільки твоїх грошей біржа блокує під цю угоду. Решта банку лишається вільною. Максимальну частку банку на одну угоду можна змінити в налаштуваннях.</p>'],
-size:['Розмір позиції','<p>Загальна вартість монет у позиції (з урахуванням плеча). Він розрахований так, щоб відстань до стопу × розмір = твій ризик у доларах.</p>'],
+margin:['Застава','<p>Скільки USDT ти закладаєш на угоду. Біржа блокує цю суму, поки угода відкрита. Решта банку вільна.</p><p>Втратити можна не всю заставу, а лише суму до стоп-лоссу.</p>'],
+size:['Розмір позиції','<p>На яку суму відкрита угода разом із плечем. Твоїх грошей у ній лише застава: наприклад, застава 50 USDT з плечем 4x дає позицію 200 USDT.</p><p>Прибуток і збиток рахуються від позиції, тому важлива не вона, а сума «Якщо спрацює стоп»: це максимум, який можна втратити.</p>'],
 pf:['Profit factor','<p>Усі прибутки, поділені на всі збитки. Менше 1: стратегія втрачає гроші. 1.3–2: добре. Понад 2: дуже добре.</p>'],
 exp:['Очікування','<p>Скільки в середньому приносить одна угода. Якщо значення додатне, стратегія працює на дистанції, навіть з поганими днями.</p>'],
 bewr:['Беззбитковий вінрейт','<p>Мінімальний відсоток виграшних угод, щоб не втрачати гроші при твоєму поточному співвідношенні середнього прибутку і збитку. Твій вінрейт має бути вищим.</p>'],
@@ -731,7 +746,7 @@ function openSheet(html){document.getElementById('sheet').innerHTML='<div class=
 function closeSheet(){document.getElementById('sheetBg').classList.remove('on')}
 function fld(id,label,val,hint,step){return `<div class="fld"><label>${label}</label><input id="${id}" type="number" inputmode="decimal" step="${step||'any'}" value="${val}">${hint?`<small>${hint}</small>`:''}</div>`}
 function settingsHtml(onb){
-  return `<h3>${onb?'Ласкаво просимо 👋':'Налаштування'} <span class="note" style="font-family:Manrope;font-weight:600">v${VERSION}</span></h3>${onb?`<p>Введи свій банк і бажаний заробіток на день. Додаток розрахує розмір позиції, плече, стоп і тейк під тебе.</p>`:''}
+  return `<h3>${onb?'Ласкаво просимо 👋':'Налаштування'} <span class="note" style="font-family:Onest;font-weight:600">v${VERSION}</span></h3>${onb?`<p>Введи свій банк і бажаний заробіток на день. Додаток розрахує розмір позиції, плече, стоп і тейк під тебе.</p>`:''}
   ${fld('s_bank','Банк, $',+bankNow().toFixed(2),'Скільки грошей зараз на торговому рахунку')}
   ${fld('s_goal','Ціль на день, $',S.goal,`Це ${(S.goal/bankNow()*100).toFixed(1)}% банку на день. Для довідки: 1% на день уже дуже сильний результат.`)}
   ${fld('s_risk','Ризик на угоду, % банку',S.risk,'Рекомендовано 1–2%. Більше 3% новачку не варто.','0.5')}
