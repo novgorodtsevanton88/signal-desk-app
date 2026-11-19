@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0a0d14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Signal Desk">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Signal Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root{--bg:#0a0d14;--bg2:#0f1320;--card:#141a29;--card2:#1a2133;--line:#232b40;--tx:#eef1f7;--mut:#8b94a8;--mut2:#5d6579;--up:#1fd286;--upbg:rgba(31,210,134,.12);--dn:#ff4d6a;--dnbg:rgba(255,77,106,.12);--acc:#8b6cff;--accbg:rgba(139,108,255,.14);--amb:#ffb547;--ambbg:rgba(255,181,71,.13);--r:16px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:Manrope,system-ui,sans-serif;font-size:15px}
+body{background:radial-gradient(1200px 500px at 50% -200px,#1b1640 0%,var(--bg) 60%) fixed}
+button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:16px;color:var(--tx);background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+#app{max-width:560px;margin:0 auto;padding:0 14px 96px}
+.top{display:flex;align-items:center;justify-content:space-between;padding:14px 2px 10px;position:sticky;top:0;z-index:5;background:linear-gradient(var(--bg) 70%,transparent)}
+.brand{display:flex;gap:10px;align-items:center}
+.logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#8b6cff,#1fd286);display:grid;place-items:center;font-weight:800;color:#0a0d14;font-size:18px}
+.bt{font-family:Unbounded,sans-serif;font-weight:700;font-size:16px;letter-spacing:.2px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;margin-top:3px}
+.pill i{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+.pill.live{color:var(--up);background:var(--upbg)}.pill.demo{color:var(--amb);background:var(--ambbg)}.pill.load{color:var(--mut);background:var(--card)}
+.icon{width:40px;height:40px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-size:18px;display:grid;place-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.bankbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 11px}
+.kpi .l{font-size:11px;color:var(--mut);font-weight:600}
+.kpi .v{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;margin-top:3px}
+.bar{height:5px;background:var(--bg2);border-radius:9px;margin-top:7px;overflow:hidden}.bar b{display:block;height:100%;border-radius:9px;background:var(--up)}
+.banner{border-radius:14px;padding:11px 13px;font-size:13.5px;font-weight:600;margin-bottom:12px;line-height:1.4}
+.banner.red{background:var(--dnbg);color:#ff8fa2;border:1px solid rgba(255,77,106,.3)}
+.banner.green{background:var(--upbg);color:#6ff0b6;border:1px solid rgba(31,210,134,.3)}
+.banner.amb{background:var(--ambbg);color:#ffd08a;border:1px solid rgba(255,181,71,.3)}
+.banner.acc{background:var(--accbg);color:#c6b8ff;border:1px solid rgba(139,108,255,.3)}
+.view{display:none}.view.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+h2{font-family:Unbounded,sans-serif;font-size:17px;font-weight:700;margin:6px 2px 4px}
+.sub{color:var(--mut);font-size:13px;margin:0 2px 12px}
+.chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
+.chip{padding:8px 13px;border-radius:99px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:700;white-space:nowrap;color:var(--mut)}
+.chip.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.coin{display:flex;align-items:center;gap:11px;padding:12px;border-radius:14px;background:var(--card);border:1px solid var(--line);margin-bottom:8px;width:100%;text-align:left}
+.cic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;flex:none}
+.cn{flex:1;min-width:0}.cn b{font-size:15px}.cn small{display:block;color:var(--mut);font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp{text-align:right;min-width:92px}.cp .p{font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:600}.cp .c{font-size:12px;font-weight:700;margin-top:2px}
+.up{color:var(--up)}.dn{color:var(--dn)}.mu{color:var(--mut)}
+.sig{width:86px;flex:none;text-align:right}
+.badge{display:inline-block;font-size:11px;font-weight:800;padding:4px 8px;border-radius:8px;letter-spacing:.3px}
+.badge.L{background:var(--upbg);color:var(--up)}.badge.S{background:var(--dnbg);color:var(--dn)}.badge.W{background:var(--card2);color:var(--mut)}
+.cbar{height:4px;border-radius:9px;background:var(--bg2);margin-top:6px;overflow:hidden}.cbar b{display:block;height:100%}
+.cf{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mut);margin-top:3px}
+.hero{display:flex;align-items:center;gap:14px}
+.ring{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;flex:none}
+.ring>div{width:62px;height:62px;border-radius:50%;background:var(--card);display:grid;place-items:center;text-align:center}
+.ring b{font-family:'JetBrains Mono',monospace;font-size:18px;display:block}.ring small{font-size:9.5px;color:var(--mut);font-weight:700}
+.dirt{font-family:Unbounded,sans-serif;font-size:20px;font-weight:700}
+.seg{display:flex;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;padding:9px 6px;border-radius:9px;font-size:13px;font-weight:700;color:var(--mut)}
+.seg button.on{background:var(--card2);color:var(--tx);box-shadow:0 1px 0 rgba(255,255,255,.05) inset}
+.lbl{font-size:12px;color:var(--mut);font-weight:700;margin:12px 2px 6px;text-transform:uppercase;letter-spacing:.6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cell{background:var(--bg2);border:1px solid var(--line);border-radius:13px;padding:10px 11px;position:relative}
+.cell .l{font-size:11.5px;color:var(--mut);font-weight:600;display:flex;align-items:center;gap:5px}
+.cell .v{font-family:'JetBrains Mono',monospace;font-size:15.5px;font-weight:700;margin-top:4px;word-break:break-all}
+.cell .s{font-size:11.5px;margin-top:2px;font-weight:600}
+.q{width:17px;height:17px;border-radius:50%;background:var(--card2);color:var(--mut);font-size:10.5px;font-weight:800;display:inline-grid;place-items:center;flex:none}
+.cell.full{grid-column:1/-1}
+.btn{width:100%;padding:14px;border-radius:14px;font-weight:800;font-size:15px;background:var(--acc);color:#fff;margin-top:10px}
+.btn.g{background:var(--up);color:#062a19}.btn.r{background:var(--dn)}.btn.o{background:transparent;border:1px solid var(--line);color:var(--tx)}
+.btn.sm{padding:10px;font-size:13px;margin-top:0;border-radius:11px}
+.steps{counter-reset:s;margin:0;padding:0;list-style:none}
+.steps li{counter-increment:s;position:relative;padding:8px 0 8px 36px;font-size:14px;line-height:1.45;border-bottom:1px dashed var(--line)}
+.steps li:last-child{border:0}
+.steps li:before{content:counter(s);position:absolute;left:0;top:8px;width:24px;height:24px;border-radius:8px;background:var(--accbg);color:#c6b8ff;font-weight:800;font-size:12px;display:grid;place-items:center}
+.steps b{font-family:'JetBrains Mono',monospace;font-weight:700}
+.ind{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.ind:last-child{border:0}
+.ind .dot{width:30px;height:22px;border-radius:7px;font-size:11px;font-weight:800;display:grid;place-items:center;flex:none;margin-top:1px}
+.ind .t b{font-size:13.5px}.ind .t small{display:block;color:var(--mut);font-size:12.5px;line-height:1.4;margin-top:2px}
+.ind .val{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mut);white-space:nowrap;padding-left:6px}
+#chartBox{height:360px;border-radius:var(--r);background:var(--card);border:1px solid var(--line);overflow:hidden;margin-bottom:12px;position:relative}
+.tr{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:9px}
+.trh{display:flex;align-items:center;gap:9px}
+.trh .m{margin-left:auto;text-align:right}
+.trg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0 4px}
+.trg div{font-size:11px;color:var(--mut)}.trg b{display:block;font-family:'JetBrains Mono',monospace;color:var(--tx);font-size:12px;margin-top:2px;font-weight:600;word-break:break-all}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:rgba(10,13,20,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:10;padding-bottom:env(safe-area-inset-bottom)}
+.tabs>div{display:flex;max-width:560px;width:100%}
+.tabs button{flex:1;padding:9px 0 10px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--mut2)}
+.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tabs button.on{color:var(--tx)}.tabs button.on svg{stroke:var(--acc)}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20;display:none;align-items:flex-end;justify-content:center}
+.sheet-bg.on{display:flex}
+.sheet{background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:22px 22px 0 0;width:100%;max-width:560px;max-height:88vh;overflow:auto;padding:8px 18px 28px;animation:up .25s ease}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.grab{width:42px;height:5px;border-radius:9px;background:var(--line);margin:4px auto 12px}
+.sheet h3{font-family:Unbounded,sans-serif;font-size:16px;margin:4px 0 10px}
+.sheet p{color:#c9cfdb;line-height:1.55;font-size:14.5px;margin:0 0 10px}
+.fld{margin-bottom:12px}.fld label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}.fld small{display:block;color:var(--mut);font-size:12px;margin-top:5px;line-height:1.4}
+.row{display:flex;gap:8px;align-items:center}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.big{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700}
+canvas{display:block;width:100%}
+.empty{text-align:center;color:var(--mut);padding:26px 10px;font-size:14px;line-height:1.5}
+.note{font-size:12.5px;color:var(--mut);line-height:1.5}
+.list-tight p{margin:0 0 6px}
+.toast{position:fixed;top:12px;left:50%;transform:translate(-50%,-140%);z-index:30;background:var(--card2);border:1px solid rgba(139,108,255,.5);border-radius:14px;padding:12px 16px;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.5);transition:transform .3s ease;max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast.on{transform:translate(-50%,0)}
+button[disabled]{opacity:.55}
+input[type=file]{font-size:13px;padding:10px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="brand"><div class="logo">◆</div><div><div class="bt">Signal Desk</div><div id="dataPill" class="pill load"><i></i>Підключення…</div></div></div>
+    <button class="icon" data-act="settings" aria-label="Налаштування">⚙</button>
+  </header>
+  <section id="bankbar"></section>
+  <main>
+    <section class="view on" id="v-signals"></section>
+    <section class="view" id="v-trade"></section>
+    <section class="view" id="v-chart">
+      <div class="row" style="margin-bottom:10px"><select id="chartSym" data-chg="chartSym" style="flex:1"></select></div>
+      <div class="chips" id="tfChips"></div>
+      <div id="chartBox"></div>
+      <div id="chartInd"></div>
+    </section>
+    <section class="view" id="v-journal"></section>
+    <section class="view" id="v-stats"></section>
+  </main>
+</div>
+<nav class="tabs"><div>
+  <button class="on" data-act="tab" data-arg="signals"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Сигнали</button>
+  <button data-act="tab" data-arg="trade"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Угода</button>
+  <button data-act="tab" data-arg="chart"><svg viewBox="0 0 24 24"><path d="M6 4v16M6 8h-2v6h4V8H6zM12 6v14M10 9h4v6h-4zM18 3v14M16 6h4v7h-4z"/></svg>Графік</button>
+  <button data-act="tab" data-arg="journal"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M9 10h7M9 14h7M9 18h4"/></svg>Журнал</button>
+  <button data-act="tab" data-arg="stats"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Статистика</button>
+</div></nav>
+<div class="sheet-bg" id="sheetBg"><div class="sheet" id="sheet"></div></div>
+
+<script>
+/* ================== ДАНІ ТА НАЛАШТУВАННЯ ================== */
+const COINS=[['BTC','Bitcoin',95000],['ETH','Ethereum',3300],['BNB','BNB',900],['SOL','Solana',180],['XRP','XRP',2.3],['DOGE','Dogecoin',0.2],['ADA','Cardano',0.7],['TRX','TRON',0.3],['AVAX','Avalanche',25],['LINK','Chainlink',18],['TON','Toncoin',3],['DOT','Polkadot',4],['SUI','Sui',3.2],['LTC','Litecoin',100],['BCH','Bitcoin Cash',500],['NEAR','NEAR Protocol',2.8],['APT','Aptos',5],['UNI','Uniswap',9],['ICP','Internet Computer',5],['XLM','Stellar',0.35],['ETC','Ethereum Classic',18],['HBAR','Hedera',0.22],['FIL','Filecoin',2.8],['ATOM','Cosmos',4.5],['ARB','Arbitrum',0.4],['OP','Optimism',0.7],['INJ','Injective',13],['AAVE','Aave',280],['PEPE','Pepe',0.00001],['SHIB','Shiba Inu',0.000013]]
+.map(([s,n,p])=>({s,n,p,vol:s==='BTC'?.0018:['ETH','BNB','TRX','LTC','BCH','XLM'].includes(s)?.0025:['PEPE','SHIB','DOGE','INJ','SUI','APT','ARB','OP'].includes(s)?.0045:.0035}));
+const CM=Object.fromEntries(COINS.map(c=>[c.s,c]));
+const DEF={bank:250,goal:20,risk:2,maxLev:10,marginPct:25,mode:'futures',feeMaker:0.02,feeTaker:0.05,feeSpot:0.1,dailyLoss:6,maxTrades:4,minConf:65,onboarded:false,bankSetAt:Date.now(),style:'calm',tpMode:'one'};
+const STYLES={calm:{main:'1h',high:'4h',expiry:4,expTxt:'4 години',hold:72,name:'Спокійний',lbl:'1 год'},active:{main:'15m',high:'1h',expiry:4,expTxt:'1 годину',hold:96,name:'Активний',lbl:'15 хв'}};
+const ST=()=>STYLES[S.style]||STYLES.calm;
+function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}cloudPush()}
+/* Хмарне збереження в артефакті Claude: налаштування і журнал прив'язані до твого акаунта.
+   У PWA (поза Claude) достатньо localStorage телефона. */
+let CLOUD=null,pushT=null,pushing=false,dirty=false;
+const clone=o=>JSON.parse(JSON.stringify(o));
+function cloudPush(){if(!CLOUD)return;clearTimeout(pushT);pushT=setTimeout(doPush,1200)}
+async function doPush(){if(pushing){dirty=true;return}pushing=true;try{await CLOUD.set({S:clone(S),J:clone(J),at:Date.now()})}catch(e){}pushing=false;if(dirty){dirty=false;doPush()}}
+function withTimeout(p,ms){return Promise.race([p,new Promise(r=>setTimeout(()=>r(null),ms))])}
+async function cloudInit(){
+  try{
+    if(!window.claude||typeof window.claude.use!=='function')return;
+    const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);if(!db||!user)return;
+    const id=await user.id();if(!id)return;
+    const ref=db.doc('data/users/'+id+'/state'),snap=await withTimeout(ref.get(),10000);if(!snap)return;
+    CLOUD=ref;
+    if(snap.exists){const d=snap.data()||{};if(d.S)Object.assign(S,clone(d.S));if(Array.isArray(d.J))J=clone(d.J);
+      try{localStorage.setItem('sd_settings',JSON.stringify(S));localStorage.setItem('sd_journal',JSON.stringify(J))}catch(e){}}
+    else if(S.onboarded||J.length)doPush();
+  }catch(e){}
+}
+const S=Object.assign({},DEF,load('sd_settings',{}));
+let J=load('sd_journal',[]);
+const st={view:'signals',filter:'all',sel:'BTC',override:null,entryType:'limit',mode:S.mode,sig:{},P:{},src:'load',tick:0,chartSym:'BTC',chartTf:ST().main,prevStrong:null,bt:null,btRun:false,statTab:'mine',showPlan:true,closing:null,confirmClear:false};
+const TF={'5m':300,'15m':900,'1h':3600,'4h':14400};
+
+/* ================== ФОРМАТУВАННЯ ================== */
+function dec(p){return p>=1000?2:p>=10?3:p>=1?4:p>=0.01?5:8}
+function fp(p){if(p==null||!isFinite(p))return '—';if(p<0.01)return p.toPrecision(4);return p.toLocaleString('en-US',{minimumFractionDigits:dec(p),maximumFractionDigits:dec(p)})}
+function fu(x,sign){if(x==null||!isFinite(x))return '—';const s=sign?(x>0?'+':x<0?'−':''):(x<0?'−':'');return s+'$'+Math.abs(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fq(q){return q>=100?Math.round(q).toLocaleString('en-US'):q>=1?q.toFixed(2):q.toFixed(4)}
+function pct(x,d=2){return (x>0?'+':'')+x.toFixed(d)+'%'}
+function hue(s){let h=0;for(const ch of s)h=(h*31+ch.charCodeAt(0))%360;return h}
+function cic(s){const h=hue(s);return `<div class="cic" style="background:hsla(${h},70%,60%,.16);color:hsl(${h},80%,72%)">${s.slice(0,4)}</div>`}
+const dayKey=t=>{const d=new Date(t);return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate()};
+
+/* ================== ДЕМО-ДВИГУН ================== */
+const D={};
+function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function demoCandle(o,c,p){
+  if(o.regime<=0){o.drift=(Math.random()-.5)*.5*c.vol;o.regime=80+Math.random()*300}
+  o.regime--;let cur=p,hi=p,lo=p;
+  for(let j=0;j<6;j++){cur*=1+o.drift/6+gauss()*c.vol/Math.sqrt(6);hi=Math.max(hi,cur);lo=Math.min(lo,cur)}
+  return {o:p,h:hi,l:lo,c:cur,v:(1+Math.abs(gauss()))*1000*(1+Math.abs(cur-p)/p/c.vol)};
+}
+function demoInit(){
+  const now=Math.floor(Date.now()/1000),start=Math.floor(now/14400)*14400-6000*300;
+  COINS.forEach(c=>{
+    const o={base:[],drift:0,regime:0,sub:0};let p=c.p,t=start;
+    for(let i=0;i<6000;i++){const k=demoCandle(o,c,p);k.t=t;o.base.push(k);p=k.c;t+=300}
+    const f=c.p/p;o.base.forEach(b=>{b.o*=f;b.h*=f;b.l*=f;b.c*=f});D[c.s]=o;
+  });
+  updDemoP();
+}
+function demoTick(){
+  COINS.forEach(c=>{
+    const o=D[c.s],b=o.base,last=b[b.length-1];
+    const cur=last.c*(1+o.drift/20+gauss()*c.vol/Math.sqrt(20));
+    last.c=cur;last.h=Math.max(last.h,cur);last.l=Math.min(last.l,cur);last.v+=Math.abs(gauss())*60;
+    if(++o.sub>=20){o.sub=0;o.regime--;if(o.regime<=0){o.drift=(Math.random()-.5)*.5*c.vol;o.regime=80+Math.random()*300}
+      b.push({t:last.t+300,o:cur,h:cur,l:cur,c:cur,v:0});if(b.length>6500)b.splice(0,48)}
+  });updDemoP();
+}
+function updDemoP(){COINS.forEach(c=>{const b=D[c.s].base,l=b[b.length-1],o=b[b.length-289];st.P[c.s]={price:l.c,ch:(l.c-o.o)/o.o*100}})}
+function agg(base,sec){if(sec===300)return base;const out=[];let cur=null;for(const b of base){const t=Math.floor(b.t/sec)*sec;if(!cur||cur.t!==t){cur={t,o:b.o,h:b.h,l:b.l,c:b.c,v:b.v};out.push(cur)}else{cur.h=Math.max(cur.h,b.h);cur.l=Math.min(cur.l,b.l);cur.c=b.c;cur.v+=b.v}}return out}
+
+/* ================== LIVE (BINANCE) — запрацює в PWA ================== */
+const L={};let API='https://api.binance.com',FAPI_OK=false,WS=null;
+const FSYM={PEPE:'1000PEPE',SHIB:'1000SHIB'};
+const tsym=s=>S.mode==='futures'&&FSYM[s]?FSYM[s]:s;
+const useF=()=>S.mode==='futures'&&FAPI_OK;
+async function fetchK(sym,tf,limit=300){
+  const f=useF(),url=f?`https://fapi.binance.com/fapi/v1/klines?symbol=${tsym(sym)}USDT&interval=${tf}&limit=${Math.min(limit,1500)}`:`${API}/api/v3/klines?symbol=${sym}USDT&interval=${tf}&limit=${Math.min(limit,1000)}`;
+  const r=await fetch(url);if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();
+  const m=!f&&S.mode==='futures'&&FSYM[sym]?1000:1; // спотові ціни PEPE/SHIB переводимо в одиниці ф'ючерсу 1000PEPE/1000SHIB
+  return j.map(k=>({t:k[0]/1000,o:k[1]*m,h:k[2]*m,l:k[3]*m,c:k[4]*m,v:k[5]/m}))}
+async function loadTf(sym,tf){try{(L[sym]=L[sym]||{})[tf]=await fetchK(sym,tf)}catch(e){}}
+async function liveRefresh(){const s=ST();for(let i=0;i<COINS.length;i+=6){await Promise.all(COINS.slice(i,i+6).flatMap(c=>[loadTf(c.s,s.main),loadTf(c.s,s.high)]))}
+  if(![s.main,s.high].includes(st.chartTf))await loadTf(st.chartSym,st.chartTf)}
+function liveWS(){
+  if(WS){WS.onclose=null;try{WS.close()}catch(e){}}
+  const f=useF(),rev={};COINS.forEach(c=>rev[(f?tsym(c.s):c.s)+'USDT']=c.s);
+  const url=(f?'wss://fstream.binance.com/stream?streams=':'wss://stream.binance.com:9443/stream?streams=')+Object.keys(rev).map(x=>x.toLowerCase()+'@miniTicker').join('/');
+  const ws=WS=new WebSocket(url);
+  ws.onmessage=e=>{const d=JSON.parse(e.data).data;if(!d)return;const s=rev[d.s];if(!s)return;const m=!f&&S.mode==='futures'&&FSYM[s]?1000:1,c=d.c*m,o=d.o*m;st.P[s]={price:c,ch:(c-o)/o*100};
+    const mm=L[s];if(mm)for(const tf in mm){const a=mm[tf];if(a&&a.length){const l=a[a.length-1];l.c=c;l.h=Math.max(l.h,c);l.l=Math.min(l.l,c)}}};
+  ws.onclose=()=>setTimeout(()=>{if(WS===ws)liveWS()},3000);
+}
+async function ping(u){try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),3500);const r=await fetch(u,{signal:ctl.signal});clearTimeout(to);return r.ok}catch(e){return false}}
+async function detect(){
+  const [a,b,f]=await Promise.all([ping('https://api.binance.com/api/v3/ping'),ping('https://data-api.binance.vision/api/v3/ping'),ping('https://fapi.binance.com/fapi/v1/ping')]);
+  API=a?'https://api.binance.com':'https://data-api.binance.vision';FAPI_OK=f;return a||b||f}
+async function reloadMarket(){if(st.src!=='live')return;for(const k in L)delete L[k];st.sig={};st.P={};st.prevStrong=null;renderAll();await liveRefresh();liveWS();scan();scanNotify();renderAll()}
+function getCandles(sym,tf){if(st.src==='demo')return agg(D[sym].base,TF[tf]);return L[sym]&&L[sym][tf]||null}
+
+/* ================== ІНДИКАТОРИ ================== */
+function emaA(v,n){const k=2/(n+1),o=[];let e=v[0];for(let i=0;i<v.length;i++){e=i?v[i]*k+e*(1-k):v[0];o.push(e)}return o}
+function smaA(v,n){const o=[];let s=0;for(let i=0;i<v.length;i++){s+=v[i];if(i>=n)s-=v[i-n];o.push(i>=n-1?s/n:null)}return o}
+function rsiA(c,n=14){const o=Array(c.length).fill(null);if(c.length<=n)return o;let g=0,l=0;for(let i=1;i<=n;i++){const d=c[i]-c[i-1];d>0?g+=d:l-=d}g/=n;l/=n;o[n]=l===0?100:100-100/(1+g/l);
+  for(let i=n+1;i<c.length;i++){const d=c[i]-c[i-1];g=(g*(n-1)+Math.max(d,0))/n;l=(l*(n-1)+Math.max(-d,0))/n;o[i]=l===0?100:100-100/(1+g/l)}return o}
+function trA(k){return k.map((b,i)=>i?Math.max(b.h-b.l,Math.abs(b.h-k[i-1].c),Math.abs(b.l-k[i-1].c)):b.h-b.l)}
+function atrA(k,n=14){const tr=trA(k),o=Array(k.length).fill(null);let a=0;for(let i=0;i<k.length;i++){if(i<n){a+=tr[i];if(i===n-1){a/=n;o[i]=a}}else{a=(a*(n-1)+tr[i])/n;o[i]=a}}return o}
+function adxA(k,n=14){const len=k.length,tr=trA(k),pdm=[0],mdm=[0];
+  for(let i=1;i<len;i++){const up=k[i].h-k[i-1].h,dn=k[i-1].l-k[i].l;pdm.push(up>dn&&up>0?up:0);mdm.push(dn>up&&dn>0?dn:0)}
+  let sT=0,sP=0,sM=0;const pdi=[],mdi=[],dx=[];
+  for(let i=1;i<len;i++){if(i<=n){sT+=tr[i];sP+=pdm[i];sM+=mdm[i]}else{sT=sT-sT/n+tr[i];sP=sP-sP/n+pdm[i];sM=sM-sM/n+mdm[i]}
+    if(i>=n){const p=100*sP/(sT||1),m=100*sM/(sT||1);pdi[i]=p;mdi[i]=m;dx[i]=100*Math.abs(p-m)/((p+m)||1)}}
+  const adx=Array(len).fill(null);let a=0,cnt=0;for(let i=n;i<len;i++){if(cnt<n){a+=dx[i];cnt++;if(cnt===n){a/=n;adx[i]=a}}else{a=(a*(n-1)+dx[i])/n;adx[i]=a}}
+  return {adx,pdi,mdi}}
+function macdA(c){const a=emaA(c,12),b=emaA(c,26),m=c.map((_,i)=>a[i]-b[i]),s=emaA(m,9);return {m,s,h:m.map((x,i)=>x-s[i])}}
+function bbA(c,n=20,k=2){const mid=smaA(c,n),up=[],lo=[];for(let i=0;i<c.length;i++){if(mid[i]==null){up.push(null);lo.push(null);continue}let s=0;for(let j=i-n+1;j<=i;j++)s+=(c[j]-mid[i])**2;const sd=Math.sqrt(s/n);up.push(mid[i]+k*sd);lo.push(mid[i]-k*sd)}return {mid,up,lo}}
+function sma3(a){return a.map((x,i)=>i<2||a[i]==null||a[i-1]==null||a[i-2]==null?null:(a[i]+a[i-1]+a[i-2])/3)}
+function stochRsiA(c){const r=rsiA(c,14);const s=r.map((x,i)=>{if(i<27||x==null)return null;let mn=1e18,mx=-1e18;for(let j=i-13;j<=i;j++){mn=Math.min(mn,r[j]);mx=Math.max(mx,r[j])}return mx===mn?50:100*(x-mn)/(mx-mn)});const K=sma3(s);return {k:K,d:sma3(K)}}
+function superA(k,n=10,m=3){const at=atrA(k,n),dir=Array(k.length).fill(1),line=Array(k.length).fill(null);let fu=0,fl=0,init=false;
+  for(let i=0;i<k.length;i++){if(at[i]==null)continue;const hl=(k[i].h+k[i].l)/2,bu=hl+m*at[i],bl=hl-m*at[i];
+    if(!init){fu=bu;fl=bl;init=true}else{fu=(bu<fu||k[i-1].c>fu)?bu:fu;fl=(bl>fl||k[i-1].c<fl)?bl:fl;dir[i]=dir[i-1];if(dir[i]===1&&k[i].c<fl)dir[i]=-1;else if(dir[i]===-1&&k[i].c>fu)dir[i]=1}
+    line[i]=dir[i]===1?fl:fu}return {dir,line}}
+
+/* ================== АНАЛІЗ: 10 ІНДИКАТОРІВ → ВПЕВНЕНІСТЬ ================== */
+function indic(k){const c=k.map(b=>b.c);let ob=0;const obs=[0];for(let i=1;i<k.length;i++){ob+=c[i]>c[i-1]?k[i].v:c[i]<c[i-1]?-k[i].v:0;obs.push(ob)}
+  return {k,c,e9:emaA(c,9),e21:emaA(c,21),e200:emaA(c,200),rsi:rsiA(c),md:macdA(c),bb:bbA(c),sr:stochRsiA(c),su:superA(k),ad:adxA(k),atr:atrA(k),obs}}
+function hIndic(h){const c=h.map(b=>b.c);return {c,e21:emaA(c,21),e50:emaA(c,50)}}
+function analyze(sym){const s=ST(),k=getCandles(sym,s.main),h=getCandles(sym,s.high);if(!k||k.length<210||!h||h.length<60)return null;return scoreAt(indic(k),hIndic(h),k.length-1,h.length-1,sym)}
+function scoreAt(I,HI,last,hl,sym){
+  const {k,c,e9,e21,e200,md,bb,sr,su,ad,obs}=I,price=c[last],r=I.rsi[last],hist=md.h[last],histP=md.h[last-1];
+  const pb=(price-bb.lo[last])/((bb.up[last]-bb.lo[last])||1),K=sr.k[last],Dd=sr.d[last];
+  const ADX=ad.adx[last],PDI=ad.pdi[last],MDI=ad.mdi[last],atr=I.atr[last];
+  const hc=HI.c,he21=HI.e21,he50=HI.e50;
+  const obS=obs[last]-obs[last-20];let va=0;for(let i=last-21;i<last-1;i++)va+=k[i].v;va/=20;const vr=k[last-1].v/(va||1);
+  const ind=[],add=(name,val,vote,w,txt)=>ind.push({name,val,vote,w,txt});
+  add('Довгий тренд (EMA200)',fp(e200[last]),price>e200[last]?1:-1,1.5,price>e200[last]?'Ціна вище довгої середньої: загальний рух вгору':'Ціна нижче довгої середньої: загальний рух вниз');
+  add('Короткий імпульс (EMA 9/21)',e9[last]>e21[last]?'9 > 21':'9 < 21',e9[last]>e21[last]?1:-1,1,e9[last]>e21[last]?'Швидка середня вище повільної: короткий поштовх вгору':'Швидка середня нижче повільної: короткий поштовх вниз');
+  const hv=hc[hl]>he50[hl]&&he21[hl]>he50[hl]?1:hc[hl]<he50[hl]&&he21[hl]<he50[hl]?-1:0;
+  add('Старший графік ('+ST().high+')',hv>0?'вгору':hv<0?'вниз':'боковик',hv,1.5,hv>0?'На старшому графіку тренд вгору: вітер у спину для лонгу':hv<0?'На старшому графіку тренд вниз: вітер у спину для шорту':'Старший графік без чіткого напрямку');
+  const mv=hist>0?(hist>histP?1:.3):(hist<histP?-1:-.3);
+  add('MACD',hist>0?'вище 0':'нижче 0',mv,1,mv===1?'Сила покупців зростає':mv===.3?'Покупці ще сильніші, але слабшають':mv===-1?'Сила продавців зростає':'Продавці ще сильніші, але слабшають');
+  const rv=r<30?1:r>70?-1:r>=50?.5:-.5;
+  add('RSI',r.toFixed(0),rv,1,r<30?'Перепродано: часто буває відскок вгору':r>70?'Перекуплено: часто буває відкат вниз':r>=50?'Покупці трохи сильніші':'Продавці трохи сильніші');
+  const sv=K!=null&&Dd!=null?(K<20&&K>Dd?1:K>80&&K<Dd?-1:0):0;
+  add('Stoch RSI',K!=null?K.toFixed(0):'—',sv,.7,sv>0?'Розворот вгору із зони перепроданості':sv<0?'Розворот вниз із зони перекупленості':'Нейтрально, сигналу немає');
+  const bv=pb<.15?.7:pb>.85?-.7:0;
+  add('Смуги Боллінджера',(pb*100).toFixed(0)+'%',bv,.7,bv>0?'Ціна біля нижньої межі: часто відштовхується вгору':bv<0?'Ціна біля верхньої межі: часто відштовхується вниз':'Ціна в середині каналу');
+  add('Supertrend',su.dir[last]>0?'вгору':'вниз',su.dir[last],1.2,su.dir[last]>0?'Трендовий індикатор показує ріст':'Трендовий індикатор показує падіння');
+  const av=ADX>=25?Math.sign(PDI-MDI):ADX>=18?.5*Math.sign(PDI-MDI):0;
+  add('Сила тренду (ADX)',ADX.toFixed(0),av,1,ADX<18?'Тренду майже немає (боковик): сигнали ненадійні':ADX>=25?'Сильний рух '+(PDI>MDI?'вгору':'вниз'):'Помірний рух '+(PDI>MDI?'вгору':'вниз'));
+  const ov=Math.sign(obS)*(vr>1.2?1:.5);
+  add('Обсяги (OBV)','×'+vr.toFixed(1),ov,.8,(obS>0?'Гроші заходять у монету':'Гроші виходять з монети')+(vr>1.2?', обсяг вище середнього':''));
+  let sw=0,sv2=0;ind.forEach(i=>{sw+=i.w;sv2+=i.vote*i.w});const score=sv2/sw;
+  const dir=score>.15?1:score<-.15?-1:0;let agW=0,nzW=0;ind.forEach(i=>{if(i.vote){nzW+=i.w;if(Math.sign(i.vote)===dir)agW+=i.w}});
+  const agree=nzW?agW/nzW:0;let conf=100*(.55*agree+.45*Math.min(1,Math.abs(score)*1.2));const notes=[];
+  if(ADX<18){conf*=.75;notes.push('Ринок у боковику: індикатори часто помиляються.')}
+  if(dir===1&&r>75){conf*=.8;notes.push('RSI дуже високий: ризик купити на вершині.')}
+  if(dir===-1&&r<25){conf*=.8;notes.push('RSI дуже низький: ризик продати на дні.')}
+  if(dir&&hv===-dir){conf*=.85;notes.push('Старший графік проти угоди.')}
+  conf=Math.max(5,Math.min(92,Math.round(conf)));if(!dir)conf=Math.min(conf,40);
+  let swLo=1e18,swHi=-1e18;for(let i=last-12;i<=last;i++){swLo=Math.min(swLo,k[i].l);swHi=Math.max(swHi,k[i].h)}
+  return {sym,price,dir,score,conf,ind,atr,e21:e21[last],swLo,swHi,adx:ADX,rsi:r,notes};
+}
+function scan(){COINS.forEach(c=>{const a=analyze(c.s);if(a)st.sig[c.s]=a})}
+
+/* ================== ПЛАН УГОДИ ================== */
+function feesFor(m){return m==='spot'?{mk:S.feeSpot/100,tk:S.feeSpot/100}:{mk:S.feeMaker/100,tk:S.feeTaker/100}}
+function closedT(){return J.filter(t=>t.status!=='open')}
+function bankNow(){return S.bank+closedT().filter(t=>t.closedAt>S.bankSetAt).reduce((s,t)=>s+t.pnl,0)}
+function today(){const k=dayKey(Date.now());const c=closedT().filter(t=>dayKey(t.closedAt)===k);const o=J.filter(t=>dayKey(t.openedAt)===k);
+  let streak=0;for(const t of c.slice().sort((a,b)=>b.closedAt-a.closedAt)){if(t.pnl<0)streak++;else break}
+  return {pnl:c.reduce((s,t)=>s+t.pnl,0),count:o.length,lossStreak:streak}}
+function makePlan(a,dir,entryType,mode,bankIn,tpModeIn){const one=(tpModeIn||S.tpMode)==='one';
+  const f=feesFor(mode),fe=entryType==='market'?f.tk:f.mk,price=a.price,atr=a.atr;let entry;
+  if(entryType==='market')entry=price;
+  else if(dir===1)entry=(a.e21<price&&a.e21>price-1.2*atr)?a.e21:price-.3*atr;
+  else entry=(a.e21>price&&a.e21<price+1.2*atr)?a.e21:price+.3*atr;
+  let dist=dir===1?entry-(a.swLo-.25*atr):(a.swHi+.25*atr)-entry;dist=Math.min(Math.max(dist,atr),2.5*atr);
+  const sl=entry-dir*dist,tp1=entry+dir*(one?2:1.5)*dist,tp2=entry+dir*(one?2:2.5)*dist,bank=bankIn||bankNow(),riskUsd=bank*S.risk/100;
+  let qty=riskUsd/(dist+entry*fe+sl*f.tk),lev=1;const notes=[];
+  if(mode==='spot'){const cap=bank*.95;if(qty*entry>cap){qty=cap/entry;notes.push('Розмір обмежено банком, тому ризик менший за плановий.')}}
+  else{const mc=bank*S.marginPct/100;lev=Math.max(1,Math.ceil(qty*entry/mc));if(lev>S.maxLev){lev=S.maxLev;qty=lev*mc/entry;notes.push(`Плече обмежено до ${S.maxLev}x, тому позиція і ризик менші за плановий.`)}}
+  const notional=qty*entry,margin=notional/lev,liq=mode==='spot'?null:(dir===1?entry*(1-1/lev+.005):entry*(1+1/lev-.005)),feeIn=notional*fe;
+  const pnlSL=-qty*dist-feeIn-qty*sl*f.tk,pnlTP=qty/2*(tp1-entry)*dir+qty/2*(tp2-entry)*dir-feeIn-qty/2*tp1*f.mk-qty/2*tp2*f.mk,pnlBE=one?null:qty/2*(tp1-entry)*dir-feeIn-qty/2*tp1*f.mk-qty/2*entry*f.tk;
+  if(liq!=null&&(dir===1?liq>=sl:liq<=sl))notes.push('⚠️ Ліквідація ближче за стоп! Зменш плече.');
+  return {tpMode:one?'one':'two',sym:a.sym,dir,mode,entryType,entry,sl,tp1,tp2,dist,qty,lev,notional,margin,liq,feeIn,feeTP:feeIn+qty/2*tp1*f.mk+qty/2*tp2*f.mk,riskUsd:-pnlSL,pnlSL,pnlTP,pnlBE,notes,conf:a.conf,distPct:dist/entry*100,fmk:f.mk,ftk:f.tk};
+}
+
+/* ================== ВЕРХНЯ ПАНЕЛЬ ================== */
+function renderTop(){
+  const pl=document.getElementById('dataPill');pl.className='pill '+st.src;pl.innerHTML='<i></i>'+(st.src==='live'?'LIVE · Binance '+(useF()?'Futures':'Spot'):st.src==='demo'?'ДЕМО-ціни':'Підключення…');
+  const b=bankNow(),t=today(),lim=b*S.dailyLoss/100,prog=Math.max(0,Math.min(100,t.pnl/S.goal*100));
+  let h=`<div class="bankbar"><div class="kpi"><div class="l">Банк</div><div class="v">${fu(b)}</div></div>
+  <div class="kpi"><div class="l">Сьогодні / ціль</div><div class="v ${t.pnl>0?'up':t.pnl<0?'dn':''}">${fu(t.pnl,1)}</div><div class="bar"><b style="width:${prog}%"></b></div></div>
+  <div class="kpi" data-act="help" data-arg="risk"><div class="l">Ризик / угода</div><div class="v">${fu(b*S.risk/100)}</div></div></div>`;
+  if(t.pnl<=-lim)h+=`<div class="banner red">⛔ Денний ліміт збитку (${fu(lim)}) досягнуто. На сьогодні все: завтра буде новий день. Відігрування найчастіше і зливає депозит.</div>`;
+  else if(t.pnl>=S.goal)h+=`<div class="banner green">🎯 Денну ціль виконано! Найкраще зараз закрити термінал і зберегти прибуток.</div>`;
+  else if(t.lossStreak>=2)h+=`<div class="banner amb">⏸ Два стопи поспіль. Зроби паузу на годину, перш ніж відкривати нову угоду.</div>`;
+  else if(t.count>=S.maxTrades)h+=`<div class="banner amb">Ліміт угод на день (${S.maxTrades}) вичерпано. Більше угод = більше комісій і помилок.</div>`;
+  document.getElementById('bankbar').innerHTML=h;
+}
+
+/* ================== СИГНАЛИ ================== */
+function sigBadge(a){if(!a)return '<span class="badge W">…</span>';return a.dir>0?'<span class="badge L">↑ ЛОНГ</span>':a.dir<0?'<span class="badge S">↓ ШОРТ</span>':'<span class="badge W">ЧЕКАТИ</span>'}
+function confColor(c){return c>=75?'var(--up)':c>=S.minConf?'var(--amb)':'var(--mut2)'}
+function renderSignals(){
+  let list=COINS.map(c=>({c,a:st.sig[c.s],p:st.P[c.s]}));
+  if(st.filter==='L')list=list.filter(x=>x.a&&x.a.dir>0);if(st.filter==='S')list=list.filter(x=>x.a&&x.a.dir<0);if(st.filter==='strong')list=list.filter(x=>x.a&&x.a.dir&&x.a.conf>=S.minConf);
+  if(st.mode==='spot'&&st.filter!=='all')list=list.filter(x=>x.a&&x.a.dir>0);
+  list.sort((x,y)=>((y.a&&y.a.dir?y.a.conf:0)-(x.a&&x.a.dir?x.a.conf:0)));
+  const strong=COINS.filter(c=>{const a=st.sig[c.s];return a&&a.dir&&a.conf>=S.minConf&&(st.mode!=='spot'||a.dir>0)}).length;
+  let h=`<h2>Сигнали</h2><p class="sub">Топ-30 монет · ${st.mode==='spot'?'Спот (тільки покупка)':'Ф\'ючерси'} · графік ${ST().lbl} · сильних: <b style="color:var(--tx)">${strong}</b></p>
+  <div class="seg" style="margin-bottom:10px"><button class="${S.style==='calm'?'on':''}" data-act="style" data-arg="calm">🧘 Спокійний · 1 год</button><button class="${S.style==='active'?'on':''}" data-act="style" data-arg="active">⚡ Активний · 15 хв</button></div>
+  <div class="chips">${[['all','Всі'],['strong','Сильні ≥'+S.minConf+'%'],['L','Лонг ↑'],['S','Шорт ↓']].map(([k,l])=>`<button class="chip ${st.filter===k?'on':''}" data-act="filter" data-arg="${k}">${l}</button>`).join('')}</div>`;
+  if(st.src==='demo')h+=`<div class="banner amb" data-act="help" data-arg="demo">Демо-режим: ціни змодельовані й прискорені. Детальніше →</div>`;
+  if(!list.length)h+=`<div class="empty">Зараз немає сигналів за цим фільтром.<br>Відсутність угоди теж рішення.</div>`;
+  list.forEach(({c,a,p})=>{const ch=p?p.ch:0;
+    h+=`<button class="coin" data-act="pick" data-arg="${c.s}">${cic(c.s)}<div class="cn"><b>${st.src==='live'?tsym(c.s):c.s}</b><small>${c.n}</small></div>
+    <div class="cp"><div class="p">${p?fp(p.price):'—'}</div><div class="c ${ch>=0?'up':'dn'}">${pct(ch)}</div></div>
+    <div class="sig">${sigBadge(a)}${a&&a.dir?`<div class="cbar"><b style="width:${a.conf}%;background:${confColor(a.conf)}"></b></div><div class="cf">${a.conf}%</div>`:''}</div></button>`});
+  document.getElementById('v-signals').innerHTML=h;
+}
+
+/* ================== УГОДА ================== */
+function curPlan(){const a=st.sig[st.sel];if(!a)return null;let dir=st.override||a.dir;if(st.mode==='spot'&&dir<0)dir=0;return {a,dir,plan:dir?makePlan(a,dir,st.entryType,st.mode):null}}
+function cell(l,v,s,cls,help,full){return `<div class="cell ${full?'full':''}"><div class="l">${l}${help?` <span class="q" data-act="help" data-arg="${help}">?</span>`:''}</div><div class="v ${cls||''}">${v}</div>${s?`<div class="s">${s}</div>`:''}</div>`}
+function renderTrade(){
+  const el=document.getElementById('v-trade'),cp=curPlan();
+  let h=`<h2>План угоди</h2><p class="sub">Розрахунок під твій банк, ризик і комісію</p>
+  <select data-chg="sel" style="margin-bottom:12px">${COINS.map(c=>`<option value="${c.s}" ${c.s===st.sel?'selected':''}>${c.s} · ${c.n}</option>`).join('')}</select>`;
+  if(!cp){el.innerHTML=h+'<div class="empty">Аналізую ринок…</div>';return}
+  const {a,dir,plan}=cp,p=st.P[st.sel];
+  const ring=`conic-gradient(${confColor(a.conf)} ${a.conf*3.6}deg,var(--bg2) 0)`;
+  const dirTxt=a.dir>0?'<span class="up">ЛОНГ ↑</span>':a.dir<0?'<span class="dn">ШОРТ ↓</span>':'<span class="mu">ЧЕКАТИ</span>';
+  const verdict=!a.dir?'Індикатори не домовились. Найкраще зараз нічого не робити.':a.conf>=75?'Сильний сигнал: більшість індикаторів дивляться в один бік.':a.conf>=S.minConf?'Середній сигнал: можна входити, строго дотримуючись стопу.':'Слабкий сигнал: краще пропустити.';
+  h+=`<div class="card"><div class="hero"><div class="ring" style="background:${ring}"><div><b>${a.conf}%</b><small>ВПЕВНЕН.</small></div></div>
+  <div style="flex:1"><div class="dirt">${dirTxt}</div><div class="note" style="margin-top:4px">${a.dir>0?'Ставка на ріст ціни':a.dir<0?'Ставка на падіння ціни':'Немає чіткого напрямку'} · <span class="mono">${fp(p.price)}</span></div>
+  <div class="note" style="margin-top:6px;color:#c9cfdb">${verdict} <span class="q" data-act="help" data-arg="conf">?</span></div></div></div>
+  ${a.notes.length?`<div class="banner amb" style="margin:12px 0 0">${a.notes.join('<br>')}</div>`:''}</div>`;
+  h+=`<div class="lbl">Ринок</div><div class="seg"><button class="${st.mode==='futures'?'on':''}" data-act="mode" data-arg="futures">Ф'ючерси</button><button class="${st.mode==='spot'?'on':''}" data-act="mode" data-arg="spot">Спот</button></div>
+  <div class="lbl">Напрямок</div><div class="seg"><button class="${!st.override?'on':''}" data-act="dir" data-arg="0">Як радить сигнал</button><button class="${st.override===1?'on':''}" data-act="dir" data-arg="1">Лонг</button>${st.mode==='futures'?`<button class="${st.override===-1?'on':''}" data-act="dir" data-arg="-1">Шорт</button>`:''}</div>
+  <div class="lbl">Точка входу <span class="q" data-act="help" data-arg="entry">?</span></div><div class="seg"><button class="${st.entryType==='limit'?'on':''}" data-act="entry" data-arg="limit">Краща точка (лімітка)</button><button class="${st.entryType==='market'?'on':''}" data-act="entry" data-arg="market">Зараз по ринку</button></div>
+  <div class="lbl">Тейк-профіт <span class="q" data-act="help" data-arg="tp">?</span></div><div class="seg"><button class="${S.tpMode==='one'?'on':''}" data-act="tpm" data-arg="one">Один · постав і забудь</button><button class="${S.tpMode==='two'?'on':''}" data-act="tpm" data-arg="two">Два · треба 1 перевірка</button></div>`;
+  if(!plan){h+=`<div class="card" style="margin-top:14px"><div class="empty">${st.mode==='spot'&&(st.override||a.dir)<0?'На споті можна заробити лише на рості. Сигнал зараз на падіння, тому чекаємо.':'Чіткого сигналу немає.<br>Обери напрямок вручну, лише якщо впевнений.'}</div></div>`;el.innerHTML=h;return}
+  const t=today(),lim=bankNow()*S.dailyLoss/100,rr=(plan.pnlTP/plan.riskUsd);
+  h+=`<div class="lbl">Параметри</div><div class="grid2">
+  ${cell('Вхід',fp(plan.entry),plan.entryType==='limit'?`<span class="mu">лімітка · ${pct((plan.entry-p.price)/p.price*100)} від ціни</span>`:'<span class="mu">по ринку</span>','','entry')}
+  ${cell('Плече',st.mode==='spot'?'1x':plan.lev+'x',st.mode==='spot'?'<span class="mu">без плеча</span>':'<span class="mu">ізольована маржа</span>','','lev')}
+  ${cell('Стоп-лосс',fp(plan.sl),`<span class="dn">${pct(-plan.distPct)} · ${fu(plan.pnlSL,1)}</span>`,'dn','sl')}
+  ${plan.tpMode==='one'?cell('Тейк-профіт',fp(plan.tp1),`<span class="up">${pct(plan.distPct*2)} · вся позиція</span>`,'up','tp'):
+  cell('Тейк 1 (50%)',fp(plan.tp1),`<span class="up">${pct(plan.distPct*1.5)}</span>`,'up','tp')+cell('Тейк 2 (50%)',fp(plan.tp2),`<span class="up">${pct(plan.distPct*2.5)}</span>`,'up','tp')}
+  ${cell('Ризик / прибуток','1 : '+rr.toFixed(1),`<span class="mu">ризик ${fu(plan.riskUsd)}</span>`,'','rr')}
+  ${cell('Розмір позиції',fu(plan.notional),`<span class="mu">${fq(plan.qty)} ${tsym(plan.sym)}</span>`,'','size')}
+  ${cell('Застава (маржа)',fu(plan.margin),`<span class="mu">${(plan.margin/bankNow()*100).toFixed(0)}% банку</span>`,'','margin')}
+  ${st.mode==='futures'?cell('Ліквідація',fp(plan.liq),'<span class="mu">далі за стоп ✓</span>','','liq'):cell('Ліквідація','немає','<span class="mu">на споті не буває</span>','','liq')}
+  ${cell('Комісія',fu(plan.feeTP),'<span class="mu">вхід + вихід</span>','','fee')}
+  </div>
+  <div class="lbl">Що буде в кінці</div><div class="grid2">
+  ${plan.tpMode==='one'?cell('Тейк-профіт',fu(plan.pnlTP,1),'<span class="mu">вже з комісією</span>','up')+cell('Стоп-лосс',fu(plan.pnlSL,1),'<span class="mu">максимальний збиток</span>','dn'):
+  cell('Обидва тейки',fu(plan.pnlTP,1),'<span class="mu">вже з комісією</span>','up')+cell('Тейк 1, далі беззбиток',fu(plan.pnlBE,1),'<span class="mu">половина прибутку</span>',plan.pnlBE>=0?'up':'dn')+cell('Стоп-лосс',fu(plan.pnlSL,1),'<span class="mu">максимальний збиток</span>','dn',null,true)}
+  </div>
+  <div class="card" style="margin-top:12px"><div class="note">🎯 До денної цілі ${fu(S.goal)} лишилось <b style="color:var(--tx)">${fu(Math.max(0,S.goal-t.pnl))}</b>. Ця угода в разі успіху дає <b class="up">${(plan.pnlTP/S.goal*100).toFixed(0)}%</b> цілі. Тобто потрібно приблизно <b style="color:var(--tx)">${Math.max(1,Math.ceil(Math.max(0,S.goal-t.pnl)/plan.pnlTP))}</b> таких виграшів.</div></div>`;
+  if(plan.notes.length)h+=`<div class="banner amb">${plan.notes.join('<br>')}</div>`;
+  if(a.conf<S.minConf)h+=`<div class="banner amb">Впевненість ${a.conf}% нижча за твій мінімум (${S.minConf}%). За правилами стратегії цю угоду варто пропустити.</div>`;
+  if(t.pnl<=-lim)h+=`<div class="banner red">Денний ліміт збитку досягнуто. Стратегія забороняє нові угоди сьогодні.</div>`;
+  const one=plan.tpMode==='one',ex=ST().expTxt,order=`${plan.entryType==='limit'?'Обери <b>Лімітний</b> ордер, ціна':'Обери <b>Ринковий</b> ордер, орієнтир'} <b>${fp(plan.entry)}</b>, кількість <b>${fq(plan.qty)} ${tsym(plan.sym)}</b> (≈ ${fu(plan.notional)}).`;
+  const steps=st.mode==='futures'?(one?[
+    `Binance → <b>Ф'ючерси USDⓈ-M</b> → <b>${tsym(plan.sym)}USDT</b>, маржа <b>Ізольована</b>, плече <b>${plan.lev}x</b>.`,
+    order,
+    `Постав галочку <b>TP/SL</b> під ордером: Take Profit <b>${fp(plan.tp1)}</b>, Stop Loss <b>${fp(plan.sl)}</b>.`,
+    `Натисни <b>${plan.dir>0?'Купити / Лонг':'Продати / Шорт'}</b>. Тейк і стоп уже стоять на біржі, тож телефон можна закрити: угода закриється сама.`,
+    plan.entryType==='limit'?`Перевір через ${ex}: якщо лімітка не виконалась, скасуй її, бо сигнал застарів.`:`Не чіпай угоду і не відсувай стоп.`]:[
+    `Binance → <b>Ф'ючерси USDⓈ-M</b> → <b>${tsym(plan.sym)}USDT</b>, маржа <b>Ізольована</b>, плече <b>${plan.lev}x</b>.`,
+    order+` Кнопка: <b>${plan.dir>0?'Купити / Лонг':'Продати / Шорт'}</b>.`,
+    `Одразу постав <b>Стоп-лосс ${fp(plan.sl)}</b> на всю позицію.`,
+    `Постав два ордери <b>Reduce-only</b>: <b>${fp(plan.tp1)}</b> на 50% і <b>${fp(plan.tp2)}</b> на решту.`,
+    `Коли спрацює Тейк 1, перенеси стоп на <b>${fp(plan.entry)}</b> (беззбиток).`,
+    plan.entryType==='limit'?`Якщо лімітка не виконалась за ${ex}, скасуй її.`:`Не відсувай стоп.`]):[
+    `Binance → <b>Спот</b> → <b>${plan.sym}/USDT</b>.`,
+    `${plan.entryType==='limit'?'<b>Лімітна</b> купівля за':'<b>Ринкова</b> купівля, орієнтир'} <b>${fp(plan.entry)}</b>, кількість <b>${fq(plan.qty)} ${tsym(plan.sym)}</b> (≈ ${fu(plan.notional)}).`,
+    one?`Після покупки постав <b>OCO-ордер</b> на всю кількість: ліміт (тейк) <b>${fp(plan.tp1)}</b>, стоп <b>${fp(plan.sl)}</b>. Далі можна не стежити.`:`Після покупки постав <b>OCO</b> на половину: тейк <b>${fp(plan.tp1)}</b>, стоп <b>${fp(plan.sl)}</b>. На другу половину: тейк <b>${fp(plan.tp2)}</b>, стоп <b>${fp(plan.sl)}</b>.`,
+    plan.entryType==='limit'?`Якщо лімітка не виконалась за ${ex}, скасуй її.`:`Не чіпай угоду до стопу або тейку.`];
+  h+=`<div class="lbl">Як відкрити на біржі</div><div class="card"><ol class="steps">${steps.map(s=>`<li>${s}</li>`).join('')}</ol></div>
+  <button class="btn g" data-act="toJournal">✓ Я відкрив угоду, записати в журнал</button>
+  <button class="btn o" data-act="planChart">Показати на графіку</button>`;
+  el.innerHTML=h;
+}
+
+/* ================== ГРАФІК ================== */
+let CH=null,cS,e21S,e200S,lines=[],chKey='',chLen=0;
+function initChart(){
+  if(CH||!window.LightweightCharts){if(!window.LightweightCharts)document.getElementById('chartBox').innerHTML='<div class="empty">Бібліотеку графіків не вдалося завантажити.</div>';return}
+  CH=LightweightCharts.createChart(document.getElementById('chartBox'),{autoSize:true,layout:{background:{type:'solid',color:'transparent'},textColor:'#8b94a8',fontFamily:'JetBrains Mono',fontSize:11},
+    grid:{vertLines:{color:'#1a2030'},horzLines:{color:'#1a2030'}},rightPriceScale:{borderColor:'#232b40'},timeScale:{borderColor:'#232b40',timeVisible:true},crosshair:{mode:0}});
+  cS=CH.addCandlestickSeries({upColor:'#1fd286',downColor:'#ff4d6a',borderVisible:false,wickUpColor:'#1fd286',wickDownColor:'#ff4d6a'});
+  e21S=CH.addLineSeries({color:'#8b6cff',lineWidth:2,priceLineVisible:false,lastValueVisible:false});
+  e200S=CH.addLineSeries({color:'#ffb547',lineWidth:2,priceLineVisible:false,lastValueVisible:false});
+}
+function chartData(full){
+  if(!CH)return;const k=getCandles(st.chartSym,st.chartTf);
+  if(!k){if(st.src==='live')loadTf(st.chartSym,st.chartTf).then(()=>chartData(true));return}
+  const key=st.chartSym+st.chartTf;const c=k.map(b=>b.c),e21=emaA(c,21),e200=emaA(c,200);
+  if(full||key!==chKey||k.length!==chLen){
+    const d=dec(k[k.length-1].c);const pf={type:'price',precision:d,minMove:Math.pow(10,-d)};
+    cS.applyOptions({priceFormat:pf});e21S.applyOptions({priceFormat:pf});e200S.applyOptions({priceFormat:pf});
+    cS.setData(k.map(b=>({time:b.t,open:b.o,high:b.h,low:b.l,close:b.c})));
+    e21S.setData(k.map((b,i)=>({time:b.t,value:e21[i]})));e200S.setData(k.length>=200?k.map((b,i)=>({time:b.t,value:e200[i]})).slice(199):[]);
+    if(key!==chKey)CH.timeScale().fitContent();chKey=key;chLen=k.length;drawLines();
+  }else{const b=k[k.length-1],i=k.length-1;cS.update({time:b.t,open:b.o,high:b.h,low:b.l,close:b.c});e21S.update({time:b.t,value:e21[i]});if(k.length>=200)e200S.update({time:b.t,value:e200[i]})}
+}
+function drawLines(){
+  lines.forEach(l=>cS.removePriceLine(l));lines=[];if(!st.showPlan)return;
+  const open=J.find(t=>t.status==='open'&&t.sym===st.chartSym);let pl=open;
+  if(!pl&&st.chartSym===st.sel){const cp=curPlan();pl=cp&&cp.plan}
+  if(!pl)return;
+  [[pl.entry,'#8b6cff','Вхід'],[pl.sl,'#ff4d6a','Стоп'],[pl.tp1,'#1fd286','Тейк 1'],[pl.tp2,'#1fd286','Тейк 2']].forEach(([p,c,t])=>lines.push(cS.createPriceLine({price:p,color:c,lineWidth:1,lineStyle:2,axisLabelVisible:true,title:t})));
+}
+function renderChart(){
+  const sel=document.getElementById('chartSym');sel.innerHTML=COINS.map(c=>`<option value="${c.s}" ${c.s===st.chartSym?'selected':''}>${c.s} · ${c.n}</option>`).join('');
+  document.getElementById('tfChips').innerHTML=Object.keys(TF).map(t=>`<button class="chip ${st.chartTf===t?'on':''}" data-act="tf" data-arg="${t}">${t}</button>`).join('')+`<button class="chip ${st.showPlan?'on':''}" data-act="plan">Лінії плану</button>`;
+  initChart();chartData(true);renderInd();
+}
+function renderInd(){
+  const a=st.sig[st.chartSym];const el=document.getElementById('chartInd');if(!a){el.innerHTML='';return}
+  el.innerHTML=`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:4px"><b>Що кажуть індикатори (${ST().lbl})</b>${sigBadge(a)}</div>
+  <div class="note" style="margin-bottom:6px"><span style="color:#8b6cff">━ EMA21</span> · <span style="color:#ffb547">━ EMA200</span> на графіку</div>
+  ${a.ind.map(i=>{const v=i.vote,cls=v>0?'L':v<0?'S':'W';return `<div class="ind"><div class="dot badge ${cls}">${v>0?'↑':v<0?'↓':'·'}</div><div class="t"><b>${i.name}</b><small>${i.txt}</small></div><div class="val">${i.val}</div></div>`}).join('')}
+  <button class="btn" data-act="pick" data-arg="${a.sym}">Розрахувати угоду по ${a.sym}</button></div>`;
+}
+
+/* ================== ЖУРНАЛ ================== */
+function upnl(t){const p=st.P[t.sym];if(!p)return 0;return t.qty*(p.price-t.entry)*t.dir-t.feeIn}
+function renderJournal(){
+  const open=J.filter(t=>t.status==='open'),closed=closedT().sort((a,b)=>b.closedAt-a.closedAt);
+  let h=`<h2>Журнал</h2><p class="sub">Відкритих: ${open.length} · закритих: ${closed.length}</p><button class="btn o" style="margin:0 0 12px" data-act="addManual">+ Додати угоду вручну</button>`;
+  if(!J.length)h+=`<div class="empty">Тут з'являться твої угоди.<br>Записуй кожну, бо без журналу не видно помилок.</div>`;
+  if(open.length)h+='<div class="lbl">Відкриті</div>';
+  open.forEach(t=>{const u=upnl(t);
+    h+=`<div class="tr"><div class="trh">${cic(t.sym)}<div><b>${t.sym}</b> <span class="badge ${t.dir>0?'L':'S'}">${t.dir>0?'ЛОНГ':'ШОРТ'}</span><div class="note">${t.mode==='spot'?'Спот':t.lev+'x'} · ${new Date(t.openedAt).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div>
+    <div class="m"><div class="mono ${u>=0?'up':'dn'}" id="u-${t.id}" style="font-weight:700">${fu(u,1)}</div><div class="note">зараз</div></div></div>
+    <div class="trg"><div>Вхід<b>${fp(t.entry)}</b></div><div>Стоп<b class="dn">${fp(t.sl)}</b></div>${t.tpMode==='one'?`<div>Тейк<b class="up">${fp(t.tp1)}</b></div><div>Плече<b>${t.mode==='spot'?'—':t.lev+'x'}</b></div>`:`<div>Тейк 1<b class="up">${fp(t.tp1)}</b></div><div>Тейк 2<b class="up">${fp(t.tp2)}</b></div>`}</div>`;
+    if(st.closing===t.id)h+=`<div class="row" style="margin-top:8px"><input id="mx-${t.id}" type="number" inputmode="decimal" step="any" placeholder="Ціна виходу" value="${st.P[t.sym]?+st.P[t.sym].price.toPrecision(6):''}"><button class="btn sm" style="width:auto;padding:12px 16px" data-act="manualDo" data-arg="${t.id}">OK</button></div>`;
+    h+=`<div class="acts">${t.tpMode==='one'?`<button class="btn sm g" data-act="close" data-arg="${t.id}|tp" style="grid-column:1/-1">✓ Спрацював тейк</button>`:`<button class="btn sm g" data-act="close" data-arg="${t.id}|tp">✓ Обидва тейки</button><button class="btn sm o" data-act="close" data-arg="${t.id}|be">Тейк 1 + б/з</button>`}
+    <button class="btn sm r" data-act="close" data-arg="${t.id}|sl">✕ Стоп-лосс</button><button class="btn sm o" data-act="manual" data-arg="${t.id}">Закрити вручну</button></div>
+    <button class="btn sm o" style="margin-top:6px;color:var(--mut)" data-act="del" data-arg="${t.id}">Видалити (не відкривав)</button></div>`});
+  if(closed.length)h+='<div class="lbl">Закриті</div>';
+  const RES={tp:'Обидва тейки',be:'Тейк 1 + б/з',sl:'Стоп-лосс',manual:'Вручну'};
+  closed.forEach(t=>{h+=`<div class="tr"><div class="trh">${cic(t.sym)}<div><b>${t.sym}</b> <span class="badge ${t.dir>0?'L':'S'}">${t.dir>0?'ЛОНГ':'ШОРТ'}</span><div class="note">${RES[t.result]||''} · ${new Date(t.closedAt).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div>
+    <div class="m"><div class="mono ${t.pnl>=0?'up':'dn'}" style="font-weight:700">${fu(t.pnl,1)}</div><div class="note">${t.riskUsd?(t.pnl/t.riskUsd).toFixed(1)+'R':''}${t.conf?' · '+t.conf+'%':''}</div></div></div></div>`});
+  document.getElementById('v-journal').innerHTML=h;
+}
+function closeTrade(id,type,px){
+  const t=J.find(x=>x.id===id);if(!t)return;let pnl;
+  if(type==='tp')pnl=t.pnlTP;else if(type==='be')pnl=t.pnlBE;else if(type==='sl')pnl=t.pnlSL;
+  else pnl=t.qty*(px-t.entry)*t.dir-t.feeIn-t.qty*px*t.ftk;
+  Object.assign(t,{status:'closed',result:type,pnl,exit:px||null,closedAt:Date.now()});save('sd_journal',J);st.closing=null;renderAll();
+}
+
+/* ================== СТАТИСТИКА ================== */
+function renderStats(){
+  const c=closedT().sort((a,b)=>a.closedAt-b.closedAt),el=document.getElementById('v-stats');
+  let h=`<h2>Статистика</h2><p class="sub">Цифри, які показують, чи працює стратегія</p>
+  <div class="seg" style="margin-bottom:12px"><button class="${st.statTab==='mine'?'on':''}" data-act="stab" data-arg="mine">Мої угоди</button><button class="${st.statTab==='bt'?'on':''}" data-act="stab" data-arg="bt">Бектест</button></div>`;
+  if(st.statTab==='bt'){el.innerHTML=h+btHtml();if(st.bt)drawEq(st.bt.curve);return}
+  if(c.length<1){el.innerHTML=h+'<div class="empty">Закрий хоча б одну угоду в журналі, щоб побачити статистику.</div>';return}
+  const w=c.filter(t=>t.pnl>0),l=c.filter(t=>t.pnl<=0),tot=c.reduce((s,t)=>s+t.pnl,0),aw=w.length?w.reduce((s,t)=>s+t.pnl,0)/w.length:0,al=l.length?Math.abs(l.reduce((s,t)=>s+t.pnl,0)/l.length):0;
+  const wr=w.length/c.length*100,gw=w.reduce((s,t)=>s+t.pnl,0),gl=Math.abs(l.reduce((s,t)=>s+t.pnl,0)),pf=gl?gw/gl:Infinity,exp=tot/c.length,be=aw+al?al/(aw+al)*100:0;
+  let eq=0,pk=0,dd=0;const curve=[0];c.forEach(t=>{eq+=t.pnl;curve.push(eq);pk=Math.max(pk,eq);dd=Math.max(dd,pk-eq)});
+  const fees=c.reduce((s,t)=>s+(t.feeIn||0)*2,0);
+  h+=`<div class="card"><div class="note">Загальний результат</div><div class="big ${tot>=0?'up':'dn'}">${fu(tot,1)}</div><canvas id="eq" height="120" style="margin-top:8px"></canvas></div>
+  <div class="stat">
+  ${cell('Вінрейт',wr.toFixed(0)+'%',`<span class="mu">${w.length} з ${c.length}</span>`)}
+  ${cell('Profit factor',isFinite(pf)?pf.toFixed(2):'∞','<span class="mu">>1.3 = добре</span>',pf>=1.3?'up':pf<1?'dn':'','pf')}
+  ${cell('Середній плюс',fu(aw),'','up')}${cell('Середній мінус',fu(-al),'','dn')}
+  ${cell('Очікування / угода',fu(exp,1),'<span class="mu">в середньому</span>',exp>=0?'up':'dn','exp')}
+  ${cell('Макс. просідання',fu(-dd),'<span class="mu">від піку</span>','dn')}
+  ${cell('Комісії (≈)',fu(-fees),'<span class="mu">заплачено біржі</span>')}
+  ${cell('Беззбитковий вінрейт',be.toFixed(0)+'%','<span class="mu">потрібний мінімум</span>','','bewr')}</div>`;
+  const ratio=aw?al/aw:0;
+  if(l.length&&w.length){
+    h+=`<div class="banner ${ratio>1.2?'red':ratio>0.8?'amb':'green'}" style="margin-top:12px">${ratio>1.2?`Середній збиток у <b>${ratio.toFixed(1)}×</b> більший за середній прибуток. Через це навіть ${wr.toFixed(0)}% виграшів дають мало. Стопи мають бути коротші за тейки.`:ratio>.8?'Прибутки і збитки приблизно рівні. Спробуй тримати другу половину до Тейку 2.':'Прибутки більші за збитки. Саме так і має бути.'}<br><br>Щоб бути в нулі, тобі потрібно вигравати <b>${be.toFixed(0)}%</b> угод, а зараз ти виграєш <b>${wr.toFixed(0)}%</b>.</div>`}
+  el.innerHTML=h;drawEq(curve);
+}
+function drawEq(cv){
+  const c=document.getElementById('eq');if(!c)return;const dpr=window.devicePixelRatio||1,W=c.clientWidth,H=120;c.width=W*dpr;c.height=H*dpr;const x=c.getContext('2d');x.scale(dpr,dpr);
+  const mn=Math.min(...cv),mx=Math.max(...cv),rg=(mx-mn)||1,px=i=>i/(cv.length-1||1)*(W-4)+2,py=v=>H-6-(v-mn)/rg*(H-12);
+  x.strokeStyle='#232b40';x.setLineDash([3,4]);x.beginPath();x.moveTo(0,py(0));x.lineTo(W,py(0));x.stroke();x.setLineDash([]);
+  const col=cv[cv.length-1]>=0?'#1fd286':'#ff4d6a',g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,col+'44');g.addColorStop(1,col+'00');
+  x.beginPath();cv.forEach((v,i)=>i?x.lineTo(px(i),py(v)):x.moveTo(px(i),py(v)));x.lineTo(px(cv.length-1),H);x.lineTo(px(0),H);x.fillStyle=g;x.fill();
+  x.beginPath();cv.forEach((v,i)=>i?x.lineTo(px(i),py(v)):x.moveTo(px(i),py(v)));x.strokeStyle=col;x.lineWidth=2;x.stroke();
+}
+
+/* ================== БЕКТЕСТ ================== */
+function hMap(k,h,ms,hs){const m=[];let j=-1;for(let i=0;i<k.length;i++){const cl=k[i].t+ms;while(j+1<h.length&&h[j+1].t+hs<=cl)j++;m.push(j)}return m}
+function btCoin(sym,k,h,ms,hs,o){
+  const I=indic(k),HI=hIndic(h),mp=hMap(k,h,ms,hs),tr=[];let i=210;
+  while(i<k.length-2){const hi=mp[i];if(hi<55){i++;continue}
+    const a=scoreAt(I,HI,i,hi,sym);
+    if(!a.dir||a.conf<o.minConf||(o.mode==='spot'&&a.dir<0)){i++;continue}
+    const p=makePlan(a,a.dir,o.entryType,o.mode,o.bank,o.tpMode),d=a.dir;let fi=-1;
+    if(o.entryType==='market')fi=i+1;else for(let j=i+1;j<=Math.min(i+o.expiry,k.length-1);j++){if(d>0?k[j].l<=p.entry:k[j].h>=p.entry){fi=j;break}}
+    if(fi<0){i++;continue}
+    let half=false,sl=p.sl,res=null,ej=fi;const end=Math.min(k.length-1,fi+o.hold);
+    for(let j=fi;j<=end;j++){const b=k[j],hS=d>0?b.l<=sl:b.h>=sl,h1=d>0?b.h>=p.tp1:b.l<=p.tp1,h2=d>0?b.h>=p.tp2:b.l<=p.tp2;ej=j;
+      if(hS){res=half?'be':'sl';break}
+      if(j===fi&&o.entryType!=='market')continue;
+      if(!half&&h1){half=true;sl=p.entry;if(h2){res='tp';break}continue}
+      if(half&&h2){res='tp';break}}
+    let pnl;
+    if(res==='tp')pnl=p.pnlTP;else if(res==='sl')pnl=p.pnlSL;else if(res==='be')pnl=p.pnlBE;
+    else{const x=k[ej].c;res='time';pnl=half?p.qty/2*(p.tp1-p.entry)*d+p.qty/2*(x-p.entry)*d-p.feeIn-p.qty/2*p.tp1*p.fmk-p.qty/2*x*p.ftk:p.qty*(x-p.entry)*d-p.feeIn-p.qty*x*p.ftk}
+    tr.push({sym,t:k[fi].t,tc:k[ej].t+ms,dir:d,conf:a.conf,res,pnl,r:pnl/p.riskUsd});i=ej+1;
+  }
+  return tr;
+}
+function btPortfolio(all,o){all=all.slice().sort((a,b)=>a.t-b.t);const acc=[],day={},lim=o.bank*S.dailyLoss/100;
+  for(const t of all){const dk=dayKey(t.t*1000),d=day[dk]=day[dk]||{n:0,p:0};if(d.n>=S.maxTrades||d.p<=-lim)continue;d.n++;d.p+=t.pnl;acc.push(t)}return acc}
+function btSummary(tr,days){
+  const w=tr.filter(t=>t.pnl>0),l=tr.filter(t=>t.pnl<=0),tot=tr.reduce((s,t)=>s+t.pnl,0),gw=w.reduce((s,t)=>s+t.pnl,0),gl=-l.reduce((s,t)=>s+t.pnl,0);
+  let eq=0,pk=0,dd=0;const curve=[0];tr.slice().sort((a,b)=>a.tc-b.tc).forEach(t=>{eq+=t.pnl;curve.push(eq);pk=Math.max(pk,eq);dd=Math.max(dd,pk-eq)});
+  const cnt=r=>tr.filter(t=>t.res===r).length;
+  return {n:tr.length,wr:tr.length?w.length/tr.length*100:0,pf:gl?gw/gl:(gw?Infinity:0),tot,perDay:tot/days,dd,curve,avgR:tr.length?tr.reduce((s,t)=>s+t.r,0)/tr.length:0,res:{tp:cnt('tp'),be:cnt('be'),sl:cnt('sl'),time:cnt('time')}}
+}
+const tickUI=()=>new Promise(r=>setTimeout(r,0));
+function renderStatsIf(){if(st.view==='stats'&&st.statTab==='bt')renderStats()}
+async function runBT(ds,src){
+  st.btRun=true;const s=ST(),ms=TF[s.main],hs=TF[s.high],alt=S.tpMode==='one'?'two':'one';
+  const base={bank:bankNow(),mode:st.mode,entryType:st.entryType,tpMode:S.tpMode,expiry:s.expiry,hold:s.hold};
+  const main=[],raw=[],altT=[],byCoin={};let tmin=Infinity,tmax=-Infinity,used=0;
+  for(let n=0;n<ds.length;n++){const d=ds[n];st.btProg=`Рахую ${d.sym} (${n+1}/${ds.length})…`;renderStatsIf();await tickUI();
+    if(d.k.length<300)continue;used++;tmin=Math.min(tmin,d.k[210].t);tmax=Math.max(tmax,d.k[d.k.length-1].t);
+    const a=btCoin(d.sym,d.k,d.h,ms,hs,{...base,minConf:S.minConf});main.push(...a);byCoin[d.sym]=a.reduce((x,t)=>x+t.pnl,0);
+    raw.push(...btCoin(d.sym,d.k,d.h,ms,hs,{...base,minConf:40}));altT.push(...btCoin(d.sym,d.k,d.h,ms,hs,{...base,minConf:S.minConf,tpMode:alt}))}
+  st.btRun=false;st.btProg='';
+  if(!used){st.btErr='Замало історії: потрібно щонайменше 300 свічок '+s.main+' на монету (≈ '+(s.main==='1h'?'2 місяці':'4 дні')+').';renderStatsIf();return}
+  const days=Math.max(1,(tmax-tmin)/86400),sum=btSummary(btPortfolio(main,base),days),altS=btSummary(btPortfolio(altT,base),days);
+  const buckets=[[40,55],[55,65],[65,75],[75,101]].map(([a,b])=>{const t=raw.filter(x=>x.conf>=a&&x.conf<b),w=t.filter(x=>x.pnl>0).length;return {a,b,n:t.length,wr:t.length?w/t.length*100:0,avgR:t.length?t.reduce((x,y)=>x+y.r,0)/t.length:0}});
+  st.bt={...sum,days,buckets,byCoin,src,coins:used,alt:{mode:alt,...altS},cfg:{...base,minConf:S.minConf,style:s.name+' · '+s.lbl}};renderStatsIf();
+}
+function btDemo(){const s=ST();return COINS.map(c=>({sym:c.s,k:agg(D[c.s].base,TF[s.main]),h:agg(D[c.s].base,TF[s.high])}))}
+async function btLive(){const s=ST(),out=[];for(let i=0;i<COINS.length;i++){st.btProg=`Завантажую історію ${COINS[i].s} (${i+1}/30)…`;renderStatsIf();try{const k=await fetchK(COINS[i].s,s.main,1000);out.push({sym:COINS[i].s,k,h:agg(k,TF[s.high])})}catch(e){}}return out}
+let ZIPP=null;function loadZip(){if(window.JSZip)return Promise.resolve(window.JSZip);if(!ZIPP)ZIPP=new Promise(r=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';sc.onload=()=>r(window.JSZip);sc.onerror=()=>r(null);document.head.appendChild(sc)});return ZIPP}
+function parseCsv(txt){const rows=[];for(const line of txt.split(/\r?\n/)){const p=line.split(',');if(p.length<6)continue;let t=+p[0];if(!isFinite(t)||!t)continue;t=t>1e14?t/1e6:t>1e11?t/1e3:t;rows.push({t:Math.floor(t),o:+p[1],h:+p[2],l:+p[3],c:+p[4],v:+p[5]})}return rows}
+async function btFiles(files){
+  const by={};
+  for(const f of files){const nm=f.name.toUpperCase(),m=nm.match(/^([A-Z0-9]+?)USDT/),sym=m?m[1]:nm.replace(/\..*$/,'');const texts=[];
+    if(nm.endsWith('.ZIP')){const Z=await loadZip();if(!Z)throw new Error('Не вдалося відкрити ZIP. Розпакуй файл і обери CSV.');const z=await Z.loadAsync(f);for(const fn of Object.keys(z.files))if(fn.toLowerCase().endsWith('.csv'))texts.push(await z.files[fn].async('string'))}
+    else texts.push(await f.text());
+    texts.forEach(t=>{(by[sym]=by[sym]||[]).push(...parseCsv(t))})}
+  const s=ST(),ms=TF[s.main],out=[];
+  for(const sym in by){let k=by[sym].sort((a,b)=>a.t-b.t).filter((b,i,a)=>!i||b.t!==a[i-1].t);if(k.length<2)continue;
+    const step=k[1].t-k[0].t;if(step>ms)throw new Error(`У файлах ${sym} свічки ${Math.round(step/60)} хв, а для стилю «${s.name}» потрібні ${s.main} або менші.`);
+    if(step<ms)k=agg(k,ms);out.push({sym,k,h:agg(k,TF[s.high])})}
+  if(!out.length)throw new Error('У файлах не знайдено свічок. Потрібні файли klines з data.binance.vision.');
+  return out;
+}
+function btHtml(){
+  const s=ST();let h=`<div class="card"><b>Як працює бектест</b><p class="note" style="margin:6px 0 0">Додаток проходить історію свічка за свічкою. На кожній закритій свічці він рахує сигнал так, ніби майбутнього ще не видно, і симулює угоду за твоїми правилами: вхід, стоп, тейк, комісія, денні ліміти. Якщо в одній свічці зачеплено і стоп, і тейк, рахується стоп (песимістично).</p>
+  <p class="note" style="margin:8px 0 0;color:#c9cfdb">${s.name} · ${s.lbl} · ${st.mode==='spot'?'Спот':'Ф\'ючерси'} · ${st.entryType==='limit'?'лімітка':'по ринку'} · ${S.tpMode==='one'?'один тейк':'два тейки'} · ризик ${S.risk}% · від ${S.minConf}%</p></div>`;
+  if(st.src==='demo')h+=`<div class="banner amb">⚠️ Ціни зараз демо, тому бектест на них лише показує, що механіка працює. Про реальний ринок ці цифри нічого не кажуть. Для справжньої перевірки завантаж історію Binance нижче ↓</div>`;
+  h+=`<button class="btn" data-act="btRun" ${st.btRun?'disabled':''}>${st.btRun?'Рахую…':st.src==='live'?'▶ Запустити на 30 монетах (≈ '+(s.main==='1h'?'41 день':'10 днів')+')':'▶ Запустити на демо-даних'}</button>
+  <div class="card" style="margin-top:10px"><b>Справжня історія Binance</b><p class="note" style="margin:6px 0 10px">1. Відкрий <a href="https://data.binance.vision/?prefix=data/spot/monthly/klines/" target="_blank" style="color:#c6b8ff">data.binance.vision</a> (адреса: data.binance.vision) → монета, напр. <b>BTCUSDT</b> → <b>${s.main}</b>.<br>2. Завантаж 2–6 місячних ZIP-файлів. Можна кілька монет одразу.<br>3. Обери їх тут. Розпаковувати не треба.</p>
+  <input type="file" accept=".csv,.zip" multiple data-chg="btFile"></div>`;
+  if(st.btProg)h+=`<div class="banner acc">${st.btProg}</div>`;
+  if(st.btErr)h+=`<div class="banner red">${st.btErr}</div>`;
+  const b=st.bt;if(!b)return h;
+  const verdict=b.n<30?['amb','Угод замало ('+b.n+') для висновків. Додай більше історії або монет.']:b.pf<1?['red','На цій історії стратегія збиткова. Не торгуй нею на реальні гроші, поки не знайдемо кращі налаштування.']:b.pf<1.3?['amb','Ледь у плюсі: комісії й помилки виконання легко з\'їдять цей запас.']:['green','На цій історії стратегія прибуткова. Минулі результати не гарантують майбутніх, тому почни з мінімального ризику.'];
+  h+=`<div class="lbl">Результат · ${b.src}</div><div class="card"><div class="note">${b.coins} монет · ${b.days.toFixed(0)} днів · ${b.n} угод · ${b.cfg.style}</div><div class="big ${b.tot>=0?'up':'dn'}">${fu(b.tot,1)}</div>
+  <div class="note">≈ <b style="color:var(--tx)">${fu(b.perDay,1)}</b> на день (твоя ціль ${fu(S.goal)}) · стартовий банк ${fu(b.cfg.bank)}</div><canvas id="eq" height="120" style="margin-top:8px"></canvas></div>
+  <div class="banner ${verdict[0]}">${verdict[1]}</div>
+  <div class="stat">${cell('Вінрейт',b.wr.toFixed(0)+'%')}${cell('Profit factor',isFinite(b.pf)?b.pf.toFixed(2):'∞','<span class="mu">>1.3 = добре</span>',b.pf>=1.3?'up':b.pf<1?'dn':'','pf')}
+  ${cell('Середнє на угоду',(b.avgR>=0?'+':'')+b.avgR.toFixed(2)+'R','<span class="mu">R = твій ризик</span>',b.avgR>=0?'up':'dn','exp')}${cell('Макс. просідання',fu(-b.dd),'<span class="mu">'+(b.dd/b.cfg.bank*100).toFixed(0)+'% банку</span>','dn')}
+  ${cell('Тейків',b.res.tp,'','up')}${cell('Стопів',b.res.sl,'','dn')}${b.res.be?cell('Беззбиток',b.res.be):''}${b.res.time?cell('Закрито за часом',b.res.time,'<span class="mu">'+s.hold+' свічок</span>'):''}</div>
+  <div class="lbl">Чи працює індикатор впевненості</div><div class="card">
+  ${b.buckets.map(x=>`<div class="ind"><div class="t"><b>${x.a}–${x.b>100?100:x.b-1}%</b><small>${x.n} угод</small></div><div class="val" style="text-align:right"><span style="color:var(--tx)">${x.n?x.wr.toFixed(0)+'%':'—'}</span> вінрейт<br><span class="${x.avgR>=0?'up':'dn'}">${x.n?(x.avgR>=0?'+':'')+x.avgR.toFixed(2)+'R':''}</span></div></div>`).join('')}
+  <p class="note" style="margin:8px 0 0">Якщо у верхніх рядках результат кращий, ніж у нижніх, індикатор впевненості корисний. Якщо ні, його ваги треба налаштувати.</p></div>
+  <div class="lbl">Інший режим тейку</div><div class="card"><div class="note">${b.alt.mode==='one'?'Один тейк (2R)':'Два тейки (1.5R + 2.5R)'}: <b class="${b.alt.tot>=0?'up':'dn'}">${fu(b.alt.tot,1)}</b> · вінрейт ${b.alt.wr.toFixed(0)}% · PF ${isFinite(b.alt.pf)?b.alt.pf.toFixed(2):'∞'} · просідання ${fu(-b.alt.dd)}</div>
+  <div class="note" style="margin-top:6px;color:#c9cfdb">${b.alt.tot>b.tot?'👉 На цій історії інший режим кращий. Можна перемкнути його у вкладці «Угода».':'👉 Твій поточний режим кращий.'}</div></div>`;
+  const bc=Object.entries(b.byCoin).sort((x,y)=>y[1]-x[1]);
+  if(bc.length>3)h+=`<div class="lbl">Монети</div><div class="grid2"><div class="cell"><div class="l">Найкращі</div>${bc.slice(0,3).map(([s2,v])=>`<div class="mono" style="font-size:13px;margin-top:4px">${s2} <span class="${v>=0?'up':'dn'}">${fu(v,1)}</span></div>`).join('')}</div>
+  <div class="cell"><div class="l">Найгірші</div>${bc.slice(-3).reverse().map(([s2,v])=>`<div class="mono" style="font-size:13px;margin-top:4px">${s2} <span class="${v>=0?'up':'dn'}">${fu(v,1)}</span></div>`).join('')}</div></div>`;
+  return h;
+}
+
+/* ================== СПОВІЩЕННЯ В ДОДАТКУ ================== */
+function scanNotify(){const now=new Set(COINS.filter(c=>{const a=st.sig[c.s];return a&&a.dir&&a.conf>=S.minConf&&(st.mode!=='spot'||a.dir>0)}).map(c=>c.s));
+  if(st.prevStrong){const nw=[...now].filter(s=>!st.prevStrong.has(s));if(nw.length)toast(nw)}st.prevStrong=now}
+function toast(list){const a=st.sig[list[0]];let el=document.getElementById('toast');if(!el){el=document.createElement('button');el.id='toast';el.className='toast';document.body.appendChild(el)}
+  el.dataset.act='pick';el.dataset.arg=a.sym;el.innerHTML=`🔔 Новий сигнал: <b>${a.sym} ${a.dir>0?'ЛОНГ ↑':'ШОРТ ↓'}</b> · ${a.conf}%${list.length>1?` · і ще ${list.length-1}`:''}`;
+  el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),7000);
+  try{if(window.Notification&&Notification.permission==='granted')new Notification('Signal Desk',{body:`${a.sym} ${a.dir>0?'ЛОНГ':'ШОРТ'} · ${a.conf}%`})}catch(e){}}
+
+/* ================== ПОЯСНЕННЯ ================== */
+const H={
+conf:['Впевненість сигналу',`<p>Додаток перевіряє 10 індикаторів. Кожен «голосує» за ріст, падіння або утримується. Впевненість показує, наскільки дружно вони голосують і наскільки сильний сигнал.</p><p><b>Важливо:</b> 80% не означає 80% шансу на виграш. Це означає, що картина на графіку узгоджена. Гарантій на ринку немає, тому стоп-лосс обов'язковий завжди.</p><p>Правило: торгуй лише сигнали від <b>${S.minConf}%</b>. Слабші пропускай.</p>`],
+lev:['Кредитне плече','<p>Плече дає змогу відкрити більшу позицію, ніж твої гроші. З плечем 10x і заставою $50 ти керуєш позицією на $500.</p><p>Тут плече не «для більшого заробітку». Воно підбирається так, щоб при стоп-лоссі ти втратив рівно свій ризик (напр. $5) і не більше. Великий збиток робить не плече, а розмір позиції без стопу.</p>'],
+sl:['Стоп-лосс','<p>Ціна, на якій угода автоматично закривається з невеликим збитком. Це запобіжник.</p><p><b>Три правила:</b> ставити одразу при вході; ніколи не відсувати далі; не «пересиджувати» мінус. Саме ці 20% угод без дисципліни і з\'їдають твій прибуток.</p><p>Стоп ставиться за найближчим мінімумом/максимумом ціни з запасом, з урахуванням волатильності (ATR).</p>'],
+tp:['Тейк-профіт','<p>Ціна, де фіксується прибуток. Є два режими.</p><p><b>Один тейк · постав і забудь</b>: один тейк на всю позицію, прибуток = 2× ризику. Тейк і стоп ставляться одразу разом з ордером, і за угодою не треба стежити. Добре підходить, якщо не хочеш постійно перевіряти телефон.</p><p><b>Два тейки</b>: Тейк 1 (1.5× ризику) закриває половину, після чого стоп переносиш у беззбиток. Тейк 2 (2.5× ризику) закриває решту. Тут потрібна одна перевірка після першого тейку.</p><p>Який режим вигідніший, покаже бектест.</p>'],
+rr:['Ризик / прибуток','<p>1 : 2 означає: ризикуєш $5, щоб у разі успіху отримати $10.</p><p>Твоя ситуація зараз: 80% виграшів, але прибуток іде в нуль. Значить, середній збиток приблизно в 4 рази більший за середній прибуток. Коли співвідношення 1 : 2, достатньо вигравати 35–40% угод.</p>'],
+entry:['Краща точка входу','<p><b>Лімітка</b>: ордер трохи краще ринку. Для лонгу він нижче поточної ціни, біля середньої EMA21, куди ціна часто повертається перед продовженням руху.</p><p>Плюси: коротший стоп, кращий ризик/прибуток, дешевша комісія (maker). Мінус: ціна може не дійти, і угода не відкриється. Це нормально: пропущена угода краща за погану.</p><p><b>По ринку</b>: вхід одразу, але дорожче і з гіршою ціною.</p>'],
+liq:['Ліквідація','<p>Ціна, на якій біржа примусово закриває позицію і забирає всю заставу. Вона завжди має бути далі, ніж твій стоп-лосс. Додаток це перевіряє.</p><p>Використовуй <b>ізольовану</b> маржу: тоді під ризиком лише застава цієї угоди, а не весь рахунок.</p>'],
+fee:['Комісія','<p>Біржа бере відсоток з розміру позиції на вході й на виході. Лімітний ордер (maker) дешевший, ринковий (taker) дорожчий. Ставки змінюються в налаштуваннях.</p><p>Усі суми прибутку і збитку в додатку вже з урахуванням комісії.</p>'],
+risk:['Ризик на угоду','<p>Скільки доларів ти втрачаєш, якщо спрацює стоп. Рекомендовано 1–2% банку.</p><p>При 2% навіть 10 стопів поспіль забирають близько 18% депозиту, і це можна відновити. При 10% на угоду 5 стопів поспіль забирають половину рахунку.</p>'],
+margin:['Застава (маржа)','<p>Скільки твоїх грошей біржа блокує під цю угоду. Решта банку лишається вільною. Максимальну частку банку на одну угоду можна змінити в налаштуваннях.</p>'],
+size:['Розмір позиції','<p>Загальна вартість монет у позиції (з урахуванням плеча). Він розрахований так, щоб відстань до стопу × розмір = твій ризик у доларах.</p>'],
+pf:['Profit factor','<p>Усі прибутки, поділені на всі збитки. Менше 1: стратегія втрачає гроші. 1.3–2: добре. Понад 2: дуже добре.</p>'],
+exp:['Очікування','<p>Скільки в середньому приносить одна угода. Якщо значення додатне, стратегія працює на дистанції, навіть з поганими днями.</p>'],
+bewr:['Беззбитковий вінрейт','<p>Мінімальний відсоток виграшних угод, щоб не втрачати гроші при твоєму поточному співвідношенні середнього прибутку і збитку. Твій вінрейт має бути вищим.</p>'],
+demo:['Демо-режим',"<p>У вікні Claude браузер блокує з'єднання з біржами, тому тут ціни змодельовані: рівні цін приблизні, свічки прискорені (1 свічка 5 хв ≈ 20 с).</p><p>Логіка сигналів, розрахунки, журнал і статистика працюють повністю. Код для реальних цін Binance (REST + WebSocket) вже вбудований і автоматично увімкнеться, коли перенесемо додаток у PWA.</p><p><b>Не торгуй за демо-сигналами на реальній біржі.</b></p>"]
+};
+function openSheet(html){document.getElementById('sheet').innerHTML='<div class="grab"></div>'+html;document.getElementById('sheetBg').classList.add('on')}
+function closeSheet(){document.getElementById('sheetBg').classList.remove('on')}
+function fld(id,label,val,hint,step){return `<div class="fld"><label>${label}</label><input id="${id}" type="number" inputmode="decimal" step="${step||'any'}" value="${val}">${hint?`<small>${hint}</small>`:''}</div>`}
+function settingsHtml(onb){
+  return `<h3>${onb?'Ласкаво просимо 👋':'Налаштування'}</h3>${onb?`<p>Введи свій банк і бажаний заробіток на день. Додаток розрахує розмір позиції, плече, стоп і тейк під тебе.</p>`:''}
+  ${fld('s_bank','Банк, $',+bankNow().toFixed(2),'Скільки грошей зараз на торговому рахунку')}
+  ${fld('s_goal','Ціль на день, $',S.goal,`Це ${(S.goal/bankNow()*100).toFixed(1)}% банку на день. Для довідки: 1% на день уже дуже сильний результат.`)}
+  ${fld('s_risk','Ризик на угоду, % банку',S.risk,'Рекомендовано 1–2%. Більше 3% новачку не варто.','0.5')}
+  ${onb?'':`${fld('s_lev','Максимальне плече',S.maxLev,'Новачку рекомендовано до 10x','1')}
+  ${fld('s_mp','Макс. застава в одній угоді, % банку',S.marginPct,'Решта банку лишається вільною')}
+  ${fld('s_dl','Денний ліміт збитку, % банку',S.dailyLoss,'Досяг ліміту = кінець торгівлі на сьогодні')}
+  ${fld('s_mt','Макс. угод на день',S.maxTrades,'','1')}
+  ${fld('s_mc','Мінімальна впевненість сигналу, %',S.minConf,'Сигнали слабші за це вважаються «пропустити»','5')}
+  <div class="lbl">Комісії біржі, %</div><div class="grid2">${fld('s_fm','Ф\'ючерси maker',S.feeMaker,'лімітка')}${fld('s_ft','Ф\'ючерси taker',S.feeTaker,'ринок')}</div>${fld('s_fs','Спот',S.feeSpot,'')}`}
+  <button class="btn" data-act="saveSet" data-arg="${onb?1:0}">${onb?'Почати':'Зберегти'}</button>
+  ${onb?'':`<div class="lbl" style="margin-top:22px">Резервна копія журналу</div><p class="note">Журнал зберігається в цьому браузері. Роби копію, щоб не втратити його.</p>
+  <div class="grid2"><button class="btn sm o" data-act="copyJ">Копіювати</button><button class="btn sm o" data-act="impJ">Вставити копію</button></div>
+  <textarea id="impTxt" rows="3" placeholder="Встав сюди скопійований журнал і натисни «Вставити копію»" style="margin-top:8px"></textarea>
+  <button class="btn sm r" style="margin-top:12px" data-act="clearJ">${st.confirmClear?'Точно видалити всі угоди? Натисни ще раз':'Очистити журнал'}</button>`}`;
+}
+function manualHtml(){return `<h3>Угода вручну</h3><p>Для угод, які ти відкривав без сигналу. Потрібні для чесної статистики.</p>
+ <div class="fld"><label>Монета</label><select id="m_sym">${COINS.map(c=>`<option>${c.s}</option>`).join('')}</select></div>
+ <div class="grid2"><div class="fld"><label>Напрямок</label><select id="m_dir"><option value="1">Лонг</option><option value="-1">Шорт</option></select></div>
+ <div class="fld"><label>Ринок</label><select id="m_mode"><option value="futures">Ф'ючерси</option><option value="spot">Спот</option></select></div></div>
+ <div class="grid2">${fld('m_in','Ціна входу','','')}${fld('m_out','Ціна виходу','','')}</div>
+ <div class="grid2">${fld('m_size','Розмір позиції, $','','з плечем')}${fld('m_lev','Плече','1','','1')}</div>
+ <button class="btn" data-act="saveManual">Зберегти</button>`}
+
+/* ================== ПОДІЇ ================== */
+const num=id=>parseFloat((document.getElementById(id)||{}).value);
+function setView(v){st.view=v;document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.arg===v));renderView();window.scrollTo(0,0)}
+function renderView(){({signals:renderSignals,trade:renderTrade,chart:renderChart,journal:renderJournal,stats:renderStats})[st.view]()}
+function renderAll(){renderTop();renderView()}
+document.addEventListener('click',e=>{
+  if(e.target.id==='sheetBg'){closeSheet();return}
+  const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act,g=b.dataset.arg;
+  if(a==='tab')setView(g);
+  else if(a==='filter'){st.filter=g;renderSignals()}
+  else if(a==='pick'){st.sel=g;st.override=null;setView('trade')}
+  else if(a==='help'){const x=H[g];if(x)openSheet(`<h3>${x[0]}</h3>${x[1]}<button class="btn o" data-act="sheetClose">Зрозуміло</button>`)}
+  else if(a==='sheetClose')closeSheet();
+  else if(a==='mode'){const ch=S.mode!==g;st.mode=g;S.mode=g;save('sd_settings',S);if(g==='spot'&&st.override===-1)st.override=null;renderTrade();if(ch)reloadMarket()}
+  else if(a==='dir'){st.override=+g||null;renderTrade()}
+  else if(a==='entry'){st.entryType=g;renderTrade()}
+  else if(a==='toJournal'){const cp=curPlan();if(!cp||!cp.plan)return;J.push(Object.assign({},cp.plan,{id:Date.now().toString(36),status:'open',openedAt:Date.now()}));save('sd_journal',J);renderTop();setView('journal')}
+  else if(a==='stab'){st.statTab=g;renderStats()}
+  else if(a==='btRun'){st.btErr=null;st.btRun=true;renderStats();(st.src==='live'?btLive():Promise.resolve(btDemo())).then(ds=>runBT(ds,st.src==='live'?'Binance, остання історія':'Демо-дані'))}
+  else if(a==='tpm'){S.tpMode=g;save('sd_settings',S);renderTrade()}
+  else if(a==='style'){S.style=g;save('sd_settings',S);st.chartTf=ST().main;st.sig={};st.prevStrong=null;renderSignals();(st.src==='live'?liveRefresh():Promise.resolve()).then(()=>{scan();renderAll()})}
+  else if(a==='planChart'){st.chartSym=st.sel;st.chartTf=ST().main;st.showPlan=true;setView('chart')}
+  else if(a==='tf'){st.chartTf=g;renderChart()}
+  else if(a==='plan'){st.showPlan=!st.showPlan;renderChart()}
+  else if(a==='close'){const [id,t]=g.split('|');closeTrade(id,t)}
+  else if(a==='manual'){st.closing=st.closing===g?null:g;renderJournal()}
+  else if(a==='manualDo'){const px=num('mx-'+g);if(px>0)closeTrade(g,'manual',px)}
+  else if(a==='del'){J=J.filter(t=>t.id!==g);save('sd_journal',J);renderAll()}
+  else if(a==='settings'){st.confirmClear=false;openSheet(settingsHtml(false))}
+  else if(a==='saveSet'){
+    const nb=num('s_bank');if(nb>0&&Math.abs(nb-bankNow())>0.005){S.bank=nb;S.bankSetAt=Date.now()}
+    const set=(k,id,min,max)=>{const v=num(id);if(isFinite(v)&&v>=min&&v<=max)S[k]=v};
+    set('goal','s_goal',0,1e7);set('risk','s_risk',0.1,20);set('maxLev','s_lev',1,125);set('marginPct','s_mp',1,100);set('dailyLoss','s_dl',0.5,100);set('maxTrades','s_mt',1,100);set('minConf','s_mc',0,95);set('feeMaker','s_fm',0,1);set('feeTaker','s_ft',0,1);set('feeSpot','s_fs',0,1);
+    if(g==='1')S.onboarded=true;save('sd_settings',S);closeSheet();renderAll()}
+  else if(a==='copyJ'){navigator.clipboard.writeText(JSON.stringify({S,J})).then(()=>{b.textContent='Скопійовано ✓'}).catch(()=>{const t=document.getElementById('impTxt');t.value=JSON.stringify({S,J});t.select();b.textContent='Виділено, скопіюй вручну'})}
+  else if(a==='impJ'){try{const d=JSON.parse(document.getElementById('impTxt').value);if(Array.isArray(d.J)){J=d.J;Object.assign(S,d.S||{});save('sd_journal',J);save('sd_settings',S);closeSheet();renderAll()}}catch(err){b.textContent='Невірний формат'}}
+  else if(a==='clearJ'){if(!st.confirmClear){st.confirmClear=true;openSheet(settingsHtml(false))}else{J=[];save('sd_journal',J);st.confirmClear=false;closeSheet();renderAll()}}
+  else if(a==='addManual')openSheet(manualHtml());
+  else if(a==='saveManual'){const sym=document.getElementById('m_sym').value,dir=+document.getElementById('m_dir').value,mode=document.getElementById('m_mode').value,en=num('m_in'),ex=num('m_out'),sz=num('m_size'),lev=num('m_lev')||1;
+    if(!(en>0&&ex>0&&sz>0))return;const f=feesFor(mode),qty=sz/en,pnl=qty*(ex-en)*dir-sz*f.tk-qty*ex*f.tk,now=Date.now();
+    J.push({id:now.toString(36),sym,dir,mode,entry:en,exit:ex,qty,lev,notional:sz,feeIn:sz*f.tk,ftk:f.tk,status:'closed',result:'manual',pnl,openedAt:now,closedAt:now,sl:null,tp1:null,tp2:null});save('sd_journal',J);closeSheet();renderAll()}
+});
+document.addEventListener('change',e=>{const g=e.target.dataset.chg;if(g==='btFile'&&e.target.files.length){st.btErr=null;st.btProg='Читаю файли…';st.btRun=true;renderStats();btFiles([...e.target.files]).then(ds=>runBT(ds,'Файли Binance')).catch(er=>{st.btErr=er.message;st.btProg='';st.btRun=false;renderStats()})}if(g==='sel'){st.sel=e.target.value;st.override=null;renderTrade()}if(g==='chartSym'){st.chartSym=e.target.value;chartData(true);renderInd();if(st.src==='live'&&!(L[st.chartSym]&&L[st.chartSym][st.chartTf]))loadTf(st.chartSym,st.chartTf).then(()=>chartData(true))}});
+
+/* ================== ЗАПУСК ================== */
+function loop(){
+  if(st.src==='demo')demoTick();st.tick++;
+  if(st.tick%8===1){scan();scanNotify();if(st.view==='trade')renderTrade();if(st.view==='chart'){renderInd();drawLines()}}
+  renderTop();
+  if(st.view==='signals')renderSignals();
+  if(st.view==='chart')chartData(false);
+  if(st.view==='journal')J.filter(t=>t.status==='open').forEach(t=>{const el=document.getElementById('u-'+t.id);if(el){const u=upnl(t);el.textContent=fu(u,1);el.className='mono '+(u>=0?'up':'dn')}});
+}
+try{if('serviceWorker' in navigator&&location.protocol==='https:'&&!/claude\.ai|claudeusercontent/.test(location.hostname))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+(async function start(){
+  renderTop();document.getElementById('v-signals').innerHTML='<div class="empty">Завантаження ринку…</div>';
+  const m0=S.mode,cloud=cloudInit();
+  if(await detect()){st.src='live';await liveRefresh();liveWS();setInterval(liveRefresh,90000)}else{st.src='demo';demoInit()}
+  scan();scanNotify();renderAll();setInterval(loop,1000);
+  await cloud;st.mode=S.mode;st.chartTf=ST().main;if(S.mode!==m0)reloadMarket();renderAll();
+  if(!S.onboarded)openSheet(settingsHtml(true));
+})();
+</script>
+</body>
+</html>
