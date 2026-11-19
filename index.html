@@ -166,7 +166,7 @@ input[type=file]{font-size:13px;padding:10px}
 const COINS=[['BTC','Bitcoin',95000],['ETH','Ethereum',3300],['BNB','BNB',900],['SOL','Solana',180],['XRP','XRP',2.3],['DOGE','Dogecoin',0.2],['ADA','Cardano',0.7],['TRX','TRON',0.3],['AVAX','Avalanche',25],['LINK','Chainlink',18],['TON','Toncoin',3],['DOT','Polkadot',4],['SUI','Sui',3.2],['LTC','Litecoin',100],['BCH','Bitcoin Cash',500],['NEAR','NEAR Protocol',2.8],['APT','Aptos',5],['UNI','Uniswap',9],['ICP','Internet Computer',5],['XLM','Stellar',0.35],['ETC','Ethereum Classic',18],['HBAR','Hedera',0.22],['FIL','Filecoin',2.8],['ATOM','Cosmos',4.5],['ARB','Arbitrum',0.4],['OP','Optimism',0.7],['INJ','Injective',13],['AAVE','Aave',280],['PEPE','Pepe',0.00001],['SHIB','Shiba Inu',0.000013],['ZEC','Zcash',300],['ENA','Ethena',0.5],['TAO','Bittensor',400],['WLD','Worldcoin',1],['TRUMP','Official Trump',8],['QNT','Quant',90],['ONDO','Ondo',0.8],['PENGU','Pudgy Penguins',0.02],['FET','Fetch.ai (ASI)',0.5],['WLFI','World Liberty Financial',0.15],['KAVA','Kava',0.3],['LUNC','Terra Classic',0.00005],['RUNE','THORChain',1],['ZK','ZKsync',0.05],['BONK','Bonk',0.00002],['STRK','Starknet',0.15],['DASH','Dash',50],['PENDLE','Pendle',3],['RENDER','Render',2],['XPL','Plasma',0.3],['MMT','Momentum',0.5],['ZKC','Boundless',0.2],['HUMA','Huma Finance',0.03],['SOPH','Sophon',0.03],['HEI','Heima',0.4],['SHELL','MyShell',0.1],['USUAL','Usual',0.05],['KITE','Kite',0.1],['INIT','Initia',0.2],['BMT','Bubblemaps',0.05]]
 .map(([s,n,p],i)=>({s,n,p,vol:s==='BTC'?.0018:['ETH','BNB','TRX','LTC','BCH','XLM'].includes(s)?.0025:['PEPE','SHIB','DOGE','INJ','SUI','APT','ARB','OP'].includes(s)?.0045:i>=30?.005:.0035}));
 const CM=Object.fromEntries(COINS.map(c=>[c.s,c]));
-const VERSION='4.3';
+const VERSION='4.4';
 const DEF={bank:250,goal:20,risk:1,maxLev:10,marginPct:25,mode:'futures',feeMaker:0.02,feeTaker:0.05,feeSpot:0.1,dailyLoss:6,maxTrades:4,minConf:65,onboarded:false,bankSetAt:Date.now(),style:'calm',tpMode:'one'};
 const STYLES={calm:{main:'1h',high:'4h',expiry:4,expTxt:'4 години',hold:72,name:'Спокійний',lbl:'1 год'},active:{main:'15m',high:'1h',expiry:4,expTxt:'1 годину',hold:96,name:'Активний',lbl:'15 хв'}};
 const ST=()=>STYLES[S.style]||STYLES.calm;
@@ -244,8 +244,8 @@ const futOK=s=>!FSET||FSET.has(tsym(s)+'USDT');
 const activeCoins=()=>S.mode==='futures'&&st.src==='live'?COINS.filter(c=>futOK(c.s)):COINS;
 const tsym=s=>S.mode==='futures'&&FSYM[s]?FSYM[s]:s;
 const useF=()=>S.mode==='futures'&&FAPI_OK;
-async function fetchK(sym,tf,limit=300){
-  const f=useF()&&futOK(sym),url=f?`https://fapi.binance.com/fapi/v1/klines?symbol=${tsym(sym)}USDT&interval=${tf}&limit=${Math.min(limit,1500)}`:`${API}/api/v3/klines?symbol=${sym}USDT&interval=${tf}&limit=${Math.min(limit,1000)}`;
+async function fetchK(sym,tf,limit=300,extra=''){
+  const f=useF()&&futOK(sym),url=f?`https://fapi.binance.com/fapi/v1/klines?symbol=${tsym(sym)}USDT&interval=${tf}&limit=${Math.min(limit,1500)}${extra}`:`${API}/api/v3/klines?symbol=${sym}USDT&interval=${tf}&limit=${Math.min(limit,1000)}${extra}`;
   const r=await fetch(url);if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();
   const m=!f&&S.mode==='futures'&&FSYM[sym]&&futOK(sym)?1000:1; // спотові ціни PEPE/SHIB переводимо в одиниці ф'ючерсу 1000PEPE/1000SHIB
   return j.map(k=>({t:k[0]/1000,o:k[1]*m,h:k[2]*m,l:k[3]*m,c:k[4]*m,v:k[5]/m}))}
@@ -359,7 +359,7 @@ function scan(){st.btc=btcTrendFn(getCandles('BTC',ST().high))(nowT());activeCoi
 
 /* ================== ПЛАН УГОДИ ================== */
 function feesFor(m){return m==='spot'?{mk:S.feeSpot/100,tk:S.feeSpot/100}:{mk:S.feeMaker/100,tk:S.feeTaker/100}}
-function closedT(){return J.filter(t=>t.status!=='open')}
+function closedT(){return J.filter(t=>t.status==='closed')}
 function bankNow(){return S.bank+closedT().filter(t=>t.closedAt>S.bankSetAt).reduce((s,t)=>s+t.pnl,0)}
 function today(){const k=dayKey(Date.now());const c=closedT().filter(t=>dayKey(t.closedAt)===k);const o=J.filter(t=>dayKey(t.openedAt)===k);
   let streak=0;for(const t of c.slice().sort((a,b)=>b.closedAt-a.closedAt)){if(t.pnl<0)streak++;else break}
@@ -392,6 +392,8 @@ function renderTop(){
   let h=`<div class="bankbar"><div class="kpi"><div class="l">Банк</div><div class="v">${fu(b)}</div></div>
   <div class="kpi"><div class="l">Сьогодні / ціль</div><div class="v ${t.pnl>0?'up':t.pnl<0?'dn':''}">${fu(t.pnl,1)}</div><div class="bar"><b style="width:${prog}%"></b></div></div>
   <div class="kpi" data-act="help" data-arg="risk"><div class="l">Ризик / угода</div><div class="v">${fu(b*S.risk/100)}</div></div></div>`;
+  const expd=J.filter(x=>x.status==='pending'&&clk()>=x.expiresAt);
+  if(expd.length)h+=`<button class="banner amb" style="width:100%;text-align:left" data-act="tab" data-arg="journal">⏰ Лімітка ${expd.map(x=>tsym(x.sym)).join(', ')} не виконалась. Скасуй ордер у Binance і відміть у журналі →</button>`;
   if(t.pnl<=-lim)h+=`<div class="banner red">⛔ Денний ліміт збитку (${fu(lim)}) досягнуто. На сьогодні все: завтра буде новий день. Відігрування найчастіше і зливає депозит.</div>`;
   else if(t.pnl>=S.goal)h+=`<div class="banner green">🎯 Денну ціль виконано! Найкраще зараз закрити термінал і зберегти прибуток.</div>`;
   else if(t.lossStreak>=2)h+=`<div class="banner amb">⏸ Два стопи поспіль. Зроби паузу на годину, перш ніж відкривати нову угоду.</div>`;
@@ -408,8 +410,8 @@ function renderSignals(){
   if(st.mode==='spot'&&st.filter!=='all')list=list.filter(x=>x.a&&x.a.dir>0);
   list.sort((x,y)=>((y.a?y.a.pass+(y.a.dir?1:0):0)-(x.a?x.a.pass+(x.a.dir?1:0):0)));
   const strong=activeCoins().filter(c=>{const a=st.sig[c.s];return a&&a.dir&&a.conf>=S.minConf&&(st.mode!=='spot'||a.dir>0)}).length;
-  const nOpen=J.filter(t=>t.status==='open').length;
-  let h=(nOpen?`<button class="banner acc" style="width:100%;text-align:left" data-act="tab" data-arg="journal">📂 Відкритих угод: <b>${nOpen}</b>. Переглянути й закрити →</button>`:'')+`<h2>Сигнали</h2><p class="sub">${activeCoins().length} монет · ${st.mode==='spot'?'Спот (тільки покупка)':'Ф\'ючерси'} · графік ${ST().lbl} · сильних: <b style="color:var(--tx)">${strong}</b></p>
+  const nOpen=J.filter(t=>t.status==='open'||t.status==='pending').length;
+  let h=(nOpen?`<button class="banner acc" style="width:100%;text-align:left" data-act="tab" data-arg="journal">📂 Угоди в роботі (відкриті й лімітки): <b>${nOpen}</b> →</button>`:'')+`<h2>Сигнали</h2><p class="sub">${activeCoins().length} монет · ${st.mode==='spot'?'Спот (тільки покупка)':'Ф\'ючерси'} · графік ${ST().lbl} · сильних: <b style="color:var(--tx)">${strong}</b></p>
   <div class="seg" style="margin-bottom:10px"><button class="${S.style==='calm'?'on':''}" data-act="style" data-arg="calm">🧘 Спокійний · 1 год</button><button class="${S.style==='active'?'on':''}" data-act="style" data-arg="active">⚡ 15 хв · слабший</button></div>
   <div class="chips">${[['all','Всі'],['strong','Готові 5/5'],['L','Лонг ↑'],['S','Шорт ↓']].map(([k,l])=>`<button class="chip ${st.filter===k?'on':''}" data-act="filter" data-arg="${k}">${l}</button>`).join('')}</div>`;
   if(st.src==='demo')h+=`<div class="banner amb" data-act="help" data-arg="demo">Демо-режим: ціни змодельовані й прискорені. Детальніше →</div>`;
@@ -494,7 +496,7 @@ function renderTrade(){
   if(!plan){h+=`<div class="card" style="margin-top:14px"><div class="empty">${st.mode==='spot'&&a.dir<0?'На споті можна заробити лише на рості, а сигнал зараз на падіння. Чекаємо.':'Сигналу немає. Відсутність угоди теж рішення 🧘'}</div><button class="btn o" data-act="ttab" data-arg="mine">Порахувати свою угоду →</button></div>`;el.innerHTML=h;return}
   const t=today();
   h+=planCells(plan,p)+`<div class="card" style="margin-top:12px"><div class="note">🎯 До денної цілі ${fu(S.goal)} лишилось <b style="color:var(--tx)">${fu(Math.max(0,S.goal-t.pnl))}</b>. Ця угода в разі успіху дає <b class="up">${(plan.pnlTP/S.goal*100).toFixed(0)}%</b> цілі.</div></div>`
-   +guards(plan)+stepsFor(plan)+`<button class="btn g" data-act="toJournal">✓ Я відкрив угоду, записати в журнал</button><button class="btn o" data-act="planChart">Показати на графіку</button>`;
+   +guards(plan)+stepsFor(plan)+`<button class="btn g" data-act="toJournal">${plan.entryType==='limit'?'✓ Я поставив ордер, стежити за ним':'✓ Я відкрив угоду, записати в журнал'}</button>${plan.entryType==='limit'?'<p class="note" style="text-align:center;margin-top:8px">Угода з\'явиться в журналі як лімітка. Коли ціна дійде до входу, додаток сам перенесе її у «Відкриті».</p>':''}<button class="btn o" data-act="planChart">Показати на графіку</button>`;
   el.innerHTML=h;
 }
 /* ---------- Моя угода: калькулятор для власного входу ---------- */
@@ -520,7 +522,7 @@ function renderMineOut(){const el=document.getElementById('mineOut');if(!el)retu
   if(c.rr<2)warn.push('Тейк менший за 2R: щоб бути в плюсі, доведеться вигравати понад 40% угод.');
   st.minePlan=plan;
   el.innerHTML=(warn.length?`<div class="banner amb" style="margin-top:12px">⚠️ ${warn.join('<br>⚠️ ')}</div>`:a?`<div class="banner green" style="margin-top:12px">✓ Угода в бік тренду монети і біткоїна, стоп у розумних межах.</div>`:'')
-    +planCells(plan,st.P[st.sel])+guards(plan)+stepsFor(plan)+`<button class="btn g" data-act="toJournalMine">✓ Я відкрив угоду, записати в журнал</button>`}
+    +planCells(plan,st.P[st.sel])+guards(plan)+stepsFor(plan)+`<button class="btn g" data-act="toJournalMine">${plan.entryType==='limit'?'✓ Я поставив ордер, стежити за ним':'✓ Я відкрив угоду, записати в журнал'}</button>`}
 
 /* ================== ГРАФІК ================== */
 let CH=null,cS,e21S,e200S,lines=[],chKey='',chLen=0;
@@ -565,31 +567,108 @@ function renderInd(){
 }
 
 /* ================== ЖУРНАЛ ================== */
+// Статуси угоди: pending (лімітка чекає на вхід) → open (відкрита) → closed (закрита); cancelled (лімітку скасовано).
+// Додаток бачить лише ціни, не рахунок, тому все, що він робить сам, можна виправити одним дотиком.
+const clk=()=>st.src==='demo'&&D.BTC?nowT()*1000:Date.now();
+const tFmt=ms=>new Date(ms).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 function upnl(t){const p=st.P[t.sym];if(!p)return 0;return t.qty*(p.price-t.entry)*t.dir-t.feeIn}
+function distTxt(from,to,dir){if(to==null||!from)return '—';const v=(to-from)/from*100;return (v>0?'+':'')+v.toFixed(2)+'%'}
+function leftTxt(ms){if(ms<=0)return 'час вийшов';const m=Math.round(ms/60000);return m>=60?`${Math.floor(m/60)} год ${m%60} хв`:`${m} хв`}
+function liveBits(t){ // те, що оновлюється щосекунди
+  const p=st.P[t.sym],px=p?p.price:null,o={};
+  o['px-'+t.id]=px?fp(px):'—';
+  if(t.status==='pending'){o['de-'+t.id]=distTxt(px,t.entry);o['tm-'+t.id]=leftTxt(t.expiresAt-clk())}
+  else{o['dt-'+t.id]=distTxt(px,t.tp1Hit?t.tp2:t.tp1);o['ds-'+t.id]=distTxt(px,t.sl);const u=upnl(t);o['u-'+t.id]=[fu(u,1),'mono '+(u>=0?'up':'dn')]}
+  return o}
+function paintLive(){J.filter(t=>t.status==='pending'||t.status==='open').forEach(t=>{const b=liveBits(t);for(const id in b){const el=document.getElementById(id);if(!el)continue;const v=b[id];if(Array.isArray(v)){el.textContent=v[0];el.className=v[1]}else el.textContent=v}})}
+const NOTE=t=>`${t.mode==='spot'?'Спот':t.lev+'x · застава '+fu(t.margin||t.notional/t.lev)}`;
+function head(t,right){return `<div class="trh">${cic(t.sym)}<div><b>${tsym(t.sym)}</b> <span class="badge ${t.dir>0?'L':'S'}">${t.dir>0?'ЛОНГ':'ШОРТ'}</span><div class="note">${NOTE(t)}</div></div><div class="m">${right}</div></div>`}
 function renderJournal(){
-  const open=J.filter(t=>t.status==='open'),closed=closedT().sort((a,b)=>b.closedAt-a.closedAt);
-  let h=`<h2>Журнал</h2><p class="sub">Відкритих: ${open.length} · закритих: ${closed.length}</p><button class="btn o" style="margin:0 0 12px" data-act="addManual">+ Додати угоду вручну</button>`;
+  const pend=J.filter(t=>t.status==='pending'),open=J.filter(t=>t.status==='open'),closed=closedT().sort((a,b)=>b.closedAt-a.closedAt),now=clk();
+  let h=`<h2>Журнал</h2><p class="sub">Лімітки: ${pend.length} · відкриті: ${open.length} · закриті: ${closed.length}</p><button class="btn o" style="margin:0 0 12px" data-act="addManual">+ Додати угоду вручну</button>`;
   if(!J.length)h+=`<div class="empty">Тут з'являться твої угоди.<br>Записуй кожну, бо без журналу не видно помилок.</div>`;
+  if(pend.length)h+='<div class="lbl">Лімітки чекають на вхід</div>';
+  pend.forEach(t=>{const exp=now>=t.expiresAt;
+    h+=`<div class="tr" style="${exp?'border-color:rgba(255,181,71,.6)':''}">${head(t,`<div class="note">поставлено</div><div class="mono" style="font-size:12px">${tFmt(t.placedAt)}</div>`)}
+    <div class="trg"><div>Ціна зараз<b id="px-${t.id}">—</b></div><div>Лімітка<b>${fp(t.entry)}</b></div><div>До входу<b id="de-${t.id}">—</b></div><div>Лишилось<b id="tm-${t.id}">—</b></div></div>
+    ${exp?`<div class="banner amb" style="margin:8px 0 0">⏰ За ${ST().expTxt} ціна не дійшла до лімітки. <b>Скасуй ордер у Binance</b>, бо сигнал застарів, а потім натисни «Я скасував ордер».</div>`:`<div class="note" style="margin-top:6px">Щойно ціна торкнеться лімітки, угода сама перейде у «Відкриті».</div>`}
+    <div class="acts"><button class="btn sm ${exp?'g':'o'}" data-act="jcancel" data-arg="${t.id}">Я скасував ордер</button><button class="btn sm o" data-act="jfill" data-arg="${t.id}">Ордер виконався</button></div></div>`});
   if(open.length)h+='<div class="lbl">Відкриті</div>';
   open.forEach(t=>{const u=upnl(t);
-    h+=`<div class="tr"><div class="trh">${cic(t.sym)}<div><b>${t.sym}</b> <span class="badge ${t.dir>0?'L':'S'}">${t.dir>0?'ЛОНГ':'ШОРТ'}</span><div class="note">${t.mode==='spot'?'Спот':t.lev+'x · застава '+fu(t.margin||t.notional/t.lev)} · ${new Date(t.openedAt).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div>
-    <div class="m"><div class="mono ${u>=0?'up':'dn'}" id="u-${t.id}" style="font-weight:700">${fu(u,1)}</div><div class="note">зараз</div></div></div>
-    <div class="trg"><div>Вхід<b>${fp(t.entry)}</b></div><div>Стоп<b class="dn">${fp(t.sl)}</b></div>${t.tpMode==='one'?`<div>Тейк<b class="up">${fp(t.tp1)}</b></div><div>Плече<b>${t.mode==='spot'?'—':t.lev+'x'}</b></div>`:`<div>Тейк 1<b class="up">${fp(t.tp1)}</b></div><div>Тейк 2<b class="up">${fp(t.tp2)}</b></div>`}</div>`;
+    h+=`<div class="tr">${head(t,`<div class="${u>=0?'up':'dn'} mono" id="u-${t.id}" style="font-weight:700">${fu(u,1)}</div><div class="note">зараз</div>`)}
+    <div class="trg"><div>Ціна зараз<b id="px-${t.id}">—</b></div><div>Вхід<b>${fp(t.entry)}</b></div><div>До тейка<b class="up" id="dt-${t.id}">—</b></div><div>До стопа<b class="dn" id="ds-${t.id}">—</b></div></div>
+    <div class="trg" style="margin-top:0"><div>Стоп<b class="dn">${fp(t.sl)}</b></div>${t.tpMode==='one'?`<div>Тейк<b class="up">${fp(t.tp1)}</b></div>`:`<div>Тейк 1${t.tp1Hit?' ✓':''}<b class="up">${fp(t.tp1)}</b></div><div>Тейк 2<b class="up">${fp(t.tp2)}</b></div>`}<div>Відкрито<b style="font-size:11px">${tFmt(t.filledAt||t.openedAt)}</b></div></div>
+    ${t.tp1Hit?`<div class="banner green" style="margin:8px 0 0">Тейк 1 спрацював. Перенеси стоп на ${fp(t.entry)} (беззбиток).</div>`:''}
+    ${t.autoFilled&&!t.noAutoFill?`<div class="note" style="margin-top:6px">Відкрито автоматично: ціна торкнулася лімітки. <a href="#" data-act="junfill" data-arg="${t.id}" style="color:#c6b8ff">Насправді не виконалась?</a></div>`:''}`;
     if(st.closing===t.id)h+=`<div class="row" style="margin-top:8px"><input id="mx-${t.id}" type="number" inputmode="decimal" step="any" placeholder="Ціна виходу" value="${st.P[t.sym]?+st.P[t.sym].price.toPrecision(6):''}"><button class="btn sm" style="width:auto;padding:12px 16px" data-act="manualDo" data-arg="${t.id}">OK</button></div>`;
-    h+=`<div class="acts">${t.pnlTP==null?'':t.tpMode==='one'?`<button class="btn sm g" data-act="close" data-arg="${t.id}|tp" style="grid-column:1/-1">✓ Спрацював тейк</button>`:`<button class="btn sm g" data-act="close" data-arg="${t.id}|tp">✓ Обидва тейки</button><button class="btn sm o" data-act="close" data-arg="${t.id}|be">Тейк 1 + б/з</button>`}
+    h+=`<div class="note" style="margin-top:8px">Тейк і стоп додаток відстежує сам. Кнопки нижче для випадків, коли закрив раніше.</div>
+    <div class="acts">${t.pnlTP==null?'':t.tpMode==='one'?`<button class="btn sm g" data-act="close" data-arg="${t.id}|tp" style="grid-column:1/-1">✓ Спрацював тейк</button>`:`<button class="btn sm g" data-act="close" data-arg="${t.id}|tp">✓ Обидва тейки</button><button class="btn sm o" data-act="close" data-arg="${t.id}|be">Тейк 1 + б/з</button>`}
     ${t.pnlSL==null?'':`<button class="btn sm r" data-act="close" data-arg="${t.id}|sl">✕ Стоп-лосс</button>`}<button class="btn sm o" data-act="manual" data-arg="${t.id}" ${t.pnlSL==null?'style="grid-column:1/-1"':''}>Закрити вручну (ціна)</button></div>
     <button class="btn sm o" style="margin-top:6px;color:var(--mut)" data-act="del" data-arg="${t.id}">Видалити (не відкривав)</button></div>`});
   if(closed.length)h+='<div class="lbl">Закриті</div>';
-  const RES={tp:'Обидва тейки',be:'Тейк 1 + б/з',sl:'Стоп-лосс',manual:'Вручну'};
-  closed.forEach(t=>{h+=`<div class="tr"><div class="trh">${cic(t.sym)}<div><b>${t.sym}</b> <span class="badge ${t.dir>0?'L':'S'}">${t.dir>0?'ЛОНГ':'ШОРТ'}</span><div class="note">${RES[t.result]||''} · ${new Date(t.closedAt).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div>
-    <div class="m"><div class="mono ${t.pnl>=0?'up':'dn'}" style="font-weight:700">${fu(t.pnl,1)}</div><div class="note">${t.riskUsd?(t.pnl/t.riskUsd).toFixed(1)+'R':''}${t.conf?' · '+t.conf+'%':''}</div></div></div></div>`});
-  document.getElementById('v-journal').innerHTML=h;
+  const RES={tp:'Тейк',be:'Тейк 1 + б/з',sl:'Стоп-лосс',manual:'Вручну'};
+  closed.forEach(t=>{const undo=t.auto&&now-t.closedAt<86400e3;
+    h+=`<div class="tr">${head(t,`<div class="mono ${t.pnl>=0?'up':'dn'}" style="font-weight:700">${fu(t.pnl,1)}</div><div class="note">${t.riskUsd?(t.pnl/t.riskUsd).toFixed(1)+'R':''}</div>`)}
+    <div class="note" style="margin-top:6px">${RES[t.result]||''}${t.auto?' · <b>авто</b>':''} · ${tFmt(t.closedAt)}${t.exit?' · вихід '+fp(t.exit):''}${undo?` · <a href="#" data-act="jundo" data-arg="${t.id}" style="color:#c6b8ff">Повернути</a>`:''}</div></div>`});
+  document.getElementById('v-journal').innerHTML=h;paintLive();
 }
-function closeTrade(id,type,px){
+function closeTrade(id,type,px,auto){
   const t=J.find(x=>x.id===id);if(!t)return;let pnl;
   if(type==='tp')pnl=t.pnlTP;else if(type==='be')pnl=t.pnlBE;else if(type==='sl')pnl=t.pnlSL;
   else pnl=t.qty*(px-t.entry)*t.dir-t.feeIn-t.qty*px*t.ftk;
-  Object.assign(t,{status:'closed',result:type,pnl,exit:px||null,closedAt:Date.now()});save('sd_journal',J);st.closing=null;renderAll();
+  const exit=px||(type==='tp'?t.tp2:type==='sl'?t.sl:type==='be'?t.entry:null);
+  Object.assign(t,{status:'closed',result:type,pnl,exit,auto:!!auto,closedAt:auto||Date.now()});save('sd_journal',J);st.closing=null;
+  if(auto)notify(`${type==='sl'?'✕ Стоп':type==='be'?'Беззбиток':'✓ Тейк'}: ${tsym(t.sym)}`,`${fu(pnl,1)}. Угоду закрито в журналі автоматично.`,'journal');
+  renderAll();
+}
+/* --- Сповіщення: банер у додатку + системне (якщо дозволено) --- */
+async function askNotify(){try{if(window.Notification&&Notification.permission==='default')await Notification.requestPermission()}catch(e){}}
+function notify(title,body,tab){
+  let el=document.getElementById('toast');if(!el){el=document.createElement('button');el.id='toast';el.className='toast';document.body.appendChild(el)}
+  el.dataset.act='tab';el.dataset.arg=tab||'journal';el.innerHTML=`<b>${title}</b> · ${body}`;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),9000);
+  try{if(window.Notification&&Notification.permission==='granted'){
+    if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.getRegistration().then(r=>r?r.showNotification(title,{body,icon:'icon-192.png'}):new Notification(title,{body})).catch(()=>{});
+    else new Notification(title,{body})}}catch(e){}
+}
+/* --- Стеження: 5-хвилинні свічки з моменту ордера, тож спрацювання видно навіть після того, як додаток був закритий --- */
+async function since5m(sym,ms){
+  if(st.src==='demo')return D[sym]?D[sym].base.filter(b=>(b.t+300)*1000>ms):[];
+  if(st.src!=='live')return null;
+  try{return (await fetchK(sym,'5m',1000,`&startTime=${Math.floor(ms/300000)*300000}`)).filter(b=>(b.t+300)*1000>ms)}catch(e){return null}
+}
+let monBusy=false;
+async function monitor(){
+  if(monBusy)return;monBusy=true;let changed=false;
+  try{
+    for(const t of J.filter(x=>x.status==='pending'||x.status==='open')){
+      if(t.status==='pending'){
+        if(!t.noAutoFill){const k=await since5m(t.sym,t.placedAt);if(k){const j=k.findIndex(b=>t.dir>0?b.l<=t.entry:b.h>=t.entry);
+          if(j>=0){Object.assign(t,{status:'open',filledAt:Math.max(t.placedAt,k[j].t*1000),autoFilled:true});changed=true;
+            notify(`Лімітка виконалась: ${tsym(t.sym)}`,`Угода відкрита за ${fp(t.entry)}. Тейк і стоп стоять на біржі.`,'journal')}}}
+        if(t.status==='pending'&&clk()>=t.expiresAt&&!t.expNotified){t.expNotified=true;changed=true;
+          notify(`Скасуй ордер: ${tsym(t.sym)}`,`За ${ST().expTxt} лімітка не виконалась. Скасуй її в Binance.`,'journal')}
+      }
+      if(t.status==='open'&&!t.noAuto&&(t.sl!=null||t.tp1!=null)){
+        const from=t.filledAt||t.openedAt,k=await since5m(t.sym,from);if(!k)continue;
+        for(let j=0;j<k.length;j++){const b=k[j],first=j===0&&t.autoFilled;
+          const hitSL=t.sl!=null&&(t.dir>0?b.l<=t.sl:b.h>=t.sl),beLine=t.tp1Hit&&(t.dir>0?b.l<=t.entry:b.h>=t.entry);
+          if(t.tp1Hit&&beLine){closeTrade(t.id,'be',null,(b.t+300)*1000);changed=false;break}
+          if(hitSL){closeTrade(t.id,'sl',null,(b.t+300)*1000);changed=false;break} // стоп і тейк в одній свічці: рахуємо стоп (обережно)
+          if(first)continue;
+          const h1=t.tp1!=null&&(t.dir>0?b.h>=t.tp1:b.l<=t.tp1),h2=t.tp2!=null&&(t.dir>0?b.h>=t.tp2:b.l<=t.tp2);
+          if(t.tpMode==='two'&&h1&&!t.tp1Hit&&!h2){t.tp1Hit=true;changed=true;notify(`Тейк 1: ${tsym(t.sym)}`,`Перенеси стоп на ${fp(t.entry)} (беззбиток).`,'journal');continue}
+          if(h2||(t.tpMode!=='two'&&h1)){closeTrade(t.id,'tp',null,(b.t+300)*1000);changed=false;break}
+        }
+      }
+    }
+  }finally{monBusy=false}
+  if(changed){save('sd_journal',J);renderAll()}
+}
+function logPlan(p,limit){
+  const now=clk(),t=Object.assign({},p,{id:Date.now().toString(36),openedAt:Date.now()});
+  if(limit){Object.assign(t,{status:'pending',placedAt:now,expiresAt:now+ST().expiry*TF[ST().main]*1000});askNotify()}
+  else Object.assign(t,{status:'open',filledAt:now});
+  J.push(t);save('sd_journal',J);renderTop();setView('journal');
 }
 
 /* ================== СТАТИСТИКА ================== */
@@ -788,14 +867,18 @@ document.addEventListener('click',e=>{
   else if(a==='mode'){const ch=S.mode!==g;st.mode=g;S.mode=g;save('sd_settings',S);if(g==='spot'&&st.override===-1)st.override=null;renderTrade();if(ch)reloadMarket()}
   else if(a==='dir'){st.override=+g||null;renderTrade()}
   else if(a==='entry'){st.entryType=g;renderTrade()}
-  else if(a==='toJournal'){const cp=curPlan();if(!cp||!cp.plan)return;J.push(Object.assign({},cp.plan,{id:Date.now().toString(36),status:'open',openedAt:Date.now()}));save('sd_journal',J);renderTop();setView('journal')}
+  else if(a==='toJournal'){const cp=curPlan();if(!cp||!cp.plan)return;logPlan(cp.plan,cp.plan.entryType==='limit')}
   else if(a==='stab'){st.statTab=g;renderStats()}
   else if(a==='btRun'){st.btErr=null;st.btRun=true;renderStats();(st.src==='live'?btLive():Promise.resolve(btDemo())).then(ds=>runBT(ds,st.src==='live'?'Binance, остання історія':'Демо-дані'))}
   else if(a==='ttab'){st.tTab=g;renderTrade()}
   else if(a==='cdir'){st.custom.dir=+g;st.custom.sl=null;renderTrade()}
   else if(a==='csl'){st.custom.sl=null;renderTrade()}
   else if(a==='crr'){st.custom.rr=+g;renderTrade()}
-  else if(a==='toJournalMine'){const p=st.minePlan;if(!p)return;J.push(Object.assign({},p,{id:Date.now().toString(36),status:'open',openedAt:Date.now(),manual:true}));save('sd_journal',J);renderTop();setView('journal')}
+  else if(a==='toJournalMine'){const p=st.minePlan;if(!p)return;logPlan(Object.assign({},p,{manual:true}),p.entryType==='limit')}
+  else if(a==='jcancel'){const t=J.find(x=>x.id===g);if(t){t.status='cancelled';t.closedAt=Date.now();save('sd_journal',J);renderAll()}}
+  else if(a==='jfill'){const t=J.find(x=>x.id===g);if(t){Object.assign(t,{status:'open',filledAt:clk(),autoFilled:false});save('sd_journal',J);renderAll()}}
+  else if(a==='junfill'){e.preventDefault();const t=J.find(x=>x.id===g);if(t){Object.assign(t,{status:'pending',autoFilled:false,noAutoFill:true});delete t.filledAt;save('sd_journal',J);renderAll()}}
+  else if(a==='jundo'){e.preventDefault();const t=J.find(x=>x.id===g);if(t){Object.assign(t,{status:'open',noAuto:true,auto:false});['result','pnl','exit','closedAt'].forEach(k=>delete t[k]);save('sd_journal',J);renderAll()}}
   else if(a==='tpm'){S.tpMode=g;save('sd_settings',S);renderTrade()}
   else if(a==='style'){S.style=g;save('sd_settings',S);st.chartTf=ST().main;st.sig={};st.prevStrong=null;renderSignals();(st.src==='live'?liveRefresh():Promise.resolve()).then(()=>{scan();renderAll()})}
   else if(a==='planChart'){st.chartSym=st.sel;st.chartTf=ST().main;st.showPlan=true;setView('chart')}
@@ -839,7 +922,8 @@ function loop(){
   renderTop();
   if(st.view==='signals')renderSignals();
   if(st.view==='chart')chartData(false);
-  if(st.view==='journal')J.filter(t=>t.status==='open').forEach(t=>{const el=document.getElementById('u-'+t.id);if(el){const u=upnl(t);el.textContent=fu(u,1);el.className='mono '+(u>=0?'up':'dn')}});
+  if(st.view==='journal')paintLive();
+  if(st.tick%30===5)monitor();
 }
 try{if('serviceWorker' in navigator&&location.protocol==='https:'&&!/claude\.ai|claudeusercontent/.test(location.hostname))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
 (async function start(){
