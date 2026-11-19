@@ -166,7 +166,7 @@ input[type=file]{font-size:13px;padding:10px}
 const COINS=[['BTC','Bitcoin',95000],['ETH','Ethereum',3300],['BNB','BNB',900],['SOL','Solana',180],['XRP','XRP',2.3],['DOGE','Dogecoin',0.2],['ADA','Cardano',0.7],['TRX','TRON',0.3],['AVAX','Avalanche',25],['LINK','Chainlink',18],['TON','Toncoin',3],['DOT','Polkadot',4],['SUI','Sui',3.2],['LTC','Litecoin',100],['BCH','Bitcoin Cash',500],['NEAR','NEAR Protocol',2.8],['APT','Aptos',5],['UNI','Uniswap',9],['ICP','Internet Computer',5],['XLM','Stellar',0.35],['ETC','Ethereum Classic',18],['HBAR','Hedera',0.22],['FIL','Filecoin',2.8],['ATOM','Cosmos',4.5],['ARB','Arbitrum',0.4],['OP','Optimism',0.7],['INJ','Injective',13],['AAVE','Aave',280],['PEPE','Pepe',0.00001],['SHIB','Shiba Inu',0.000013],['ZEC','Zcash',300],['ENA','Ethena',0.5],['TAO','Bittensor',400],['WLD','Worldcoin',1],['TRUMP','Official Trump',8],['QNT','Quant',90],['ONDO','Ondo',0.8],['PENGU','Pudgy Penguins',0.02],['FET','Fetch.ai (ASI)',0.5],['WLFI','World Liberty Financial',0.15],['KAVA','Kava',0.3],['LUNC','Terra Classic',0.00005],['RUNE','THORChain',1],['ZK','ZKsync',0.05],['BONK','Bonk',0.00002],['STRK','Starknet',0.15],['DASH','Dash',50],['PENDLE','Pendle',3],['RENDER','Render',2],['XPL','Plasma',0.3],['MMT','Momentum',0.5],['ZKC','Boundless',0.2],['HUMA','Huma Finance',0.03],['SOPH','Sophon',0.03],['HEI','Heima',0.4],['SHELL','MyShell',0.1],['USUAL','Usual',0.05],['KITE','Kite',0.1],['INIT','Initia',0.2],['BMT','Bubblemaps',0.05]]
 .map(([s,n,p],i)=>({s,n,p,vol:s==='BTC'?.0018:['ETH','BNB','TRX','LTC','BCH','XLM'].includes(s)?.0025:['PEPE','SHIB','DOGE','INJ','SUI','APT','ARB','OP'].includes(s)?.0045:i>=30?.005:.0035}));
 const CM=Object.fromEntries(COINS.map(c=>[c.s,c]));
-const VERSION='4.2';
+const VERSION='4.3';
 const DEF={bank:250,goal:20,risk:1,maxLev:10,marginPct:25,mode:'futures',feeMaker:0.02,feeTaker:0.05,feeSpot:0.1,dailyLoss:6,maxTrades:4,minConf:65,onboarded:false,bankSetAt:Date.now(),style:'calm',tpMode:'one'};
 const STYLES={calm:{main:'1h',high:'4h',expiry:4,expTxt:'4 години',hold:72,name:'Спокійний',lbl:'1 год'},active:{main:'15m',high:'1h',expiry:4,expTxt:'1 годину',hold:96,name:'Активний',lbl:'15 хв'}};
 const ST=()=>STYLES[S.style]||STYLES.calm;
@@ -408,7 +408,8 @@ function renderSignals(){
   if(st.mode==='spot'&&st.filter!=='all')list=list.filter(x=>x.a&&x.a.dir>0);
   list.sort((x,y)=>((y.a?y.a.pass+(y.a.dir?1:0):0)-(x.a?x.a.pass+(x.a.dir?1:0):0)));
   const strong=activeCoins().filter(c=>{const a=st.sig[c.s];return a&&a.dir&&a.conf>=S.minConf&&(st.mode!=='spot'||a.dir>0)}).length;
-  let h=`<h2>Сигнали</h2><p class="sub">${activeCoins().length} монет · ${st.mode==='spot'?'Спот (тільки покупка)':'Ф\'ючерси'} · графік ${ST().lbl} · сильних: <b style="color:var(--tx)">${strong}</b></p>
+  const nOpen=J.filter(t=>t.status==='open').length;
+  let h=(nOpen?`<button class="banner acc" style="width:100%;text-align:left" data-act="tab" data-arg="journal">📂 Відкритих угод: <b>${nOpen}</b>. Переглянути й закрити →</button>`:'')+`<h2>Сигнали</h2><p class="sub">${activeCoins().length} монет · ${st.mode==='spot'?'Спот (тільки покупка)':'Ф\'ючерси'} · графік ${ST().lbl} · сильних: <b style="color:var(--tx)">${strong}</b></p>
   <div class="seg" style="margin-bottom:10px"><button class="${S.style==='calm'?'on':''}" data-act="style" data-arg="calm">🧘 Спокійний · 1 год</button><button class="${S.style==='active'?'on':''}" data-act="style" data-arg="active">⚡ 15 хв · слабший</button></div>
   <div class="chips">${[['all','Всі'],['strong','Готові 5/5'],['L','Лонг ↑'],['S','Шорт ↓']].map(([k,l])=>`<button class="chip ${st.filter===k?'on':''}" data-act="filter" data-arg="${k}">${l}</button>`).join('')}</div>`;
   if(st.src==='demo')h+=`<div class="banner amb" data-act="help" data-arg="demo">Демо-режим: ціни змодельовані й прискорені. Детальніше →</div>`;
@@ -575,8 +576,8 @@ function renderJournal(){
     <div class="m"><div class="mono ${u>=0?'up':'dn'}" id="u-${t.id}" style="font-weight:700">${fu(u,1)}</div><div class="note">зараз</div></div></div>
     <div class="trg"><div>Вхід<b>${fp(t.entry)}</b></div><div>Стоп<b class="dn">${fp(t.sl)}</b></div>${t.tpMode==='one'?`<div>Тейк<b class="up">${fp(t.tp1)}</b></div><div>Плече<b>${t.mode==='spot'?'—':t.lev+'x'}</b></div>`:`<div>Тейк 1<b class="up">${fp(t.tp1)}</b></div><div>Тейк 2<b class="up">${fp(t.tp2)}</b></div>`}</div>`;
     if(st.closing===t.id)h+=`<div class="row" style="margin-top:8px"><input id="mx-${t.id}" type="number" inputmode="decimal" step="any" placeholder="Ціна виходу" value="${st.P[t.sym]?+st.P[t.sym].price.toPrecision(6):''}"><button class="btn sm" style="width:auto;padding:12px 16px" data-act="manualDo" data-arg="${t.id}">OK</button></div>`;
-    h+=`<div class="acts">${t.tpMode==='one'?`<button class="btn sm g" data-act="close" data-arg="${t.id}|tp" style="grid-column:1/-1">✓ Спрацював тейк</button>`:`<button class="btn sm g" data-act="close" data-arg="${t.id}|tp">✓ Обидва тейки</button><button class="btn sm o" data-act="close" data-arg="${t.id}|be">Тейк 1 + б/з</button>`}
-    <button class="btn sm r" data-act="close" data-arg="${t.id}|sl">✕ Стоп-лосс</button><button class="btn sm o" data-act="manual" data-arg="${t.id}">Закрити вручну</button></div>
+    h+=`<div class="acts">${t.pnlTP==null?'':t.tpMode==='one'?`<button class="btn sm g" data-act="close" data-arg="${t.id}|tp" style="grid-column:1/-1">✓ Спрацював тейк</button>`:`<button class="btn sm g" data-act="close" data-arg="${t.id}|tp">✓ Обидва тейки</button><button class="btn sm o" data-act="close" data-arg="${t.id}|be">Тейк 1 + б/з</button>`}
+    ${t.pnlSL==null?'':`<button class="btn sm r" data-act="close" data-arg="${t.id}|sl">✕ Стоп-лосс</button>`}<button class="btn sm o" data-act="manual" data-arg="${t.id}" ${t.pnlSL==null?'style="grid-column:1/-1"':''}>Закрити вручну (ціна)</button></div>
     <button class="btn sm o" style="margin-top:6px;color:var(--mut)" data-act="del" data-arg="${t.id}">Видалити (не відкривав)</button></div>`});
   if(closed.length)h+='<div class="lbl">Закриті</div>';
   const RES={tp:'Обидва тейки',be:'Тейк 1 + б/з',sl:'Стоп-лосс',manual:'Вручну'};
@@ -761,12 +762,14 @@ function settingsHtml(onb){
   <textarea id="impTxt" rows="3" placeholder="Встав сюди скопійований журнал і натисни «Вставити копію»" style="margin-top:8px"></textarea>
   <button class="btn sm r" style="margin-top:12px" data-act="clearJ">${st.confirmClear?'Точно видалити всі угоди? Натисни ще раз':'Очистити журнал'}</button>`}`;
 }
-function manualHtml(){return `<h3>Угода вручну</h3><p>Для угод, які ти відкривав без сигналу. Потрібні для чесної статистики.</p>
- <div class="fld"><label>Монета</label><select id="m_sym">${COINS.map(c=>`<option>${c.s}</option>`).join('')}</select></div>
- <div class="grid2"><div class="fld"><label>Напрямок</label><select id="m_dir"><option value="1">Лонг</option><option value="-1">Шорт</option></select></div>
- <div class="fld"><label>Ринок</label><select id="m_mode"><option value="futures">Ф'ючерси</option><option value="spot">Спот</option></select></div></div>
- <div class="grid2">${fld('m_in','Ціна входу','','')}${fld('m_out','Ціна виходу','','')}</div>
- <div class="grid2">${fld('m_size','Розмір позиції, $','','з плечем')}${fld('m_lev','Плече','1','','1')}</div>
+function manualHtml(){const cur=st.P[st.sel];return `<h3>Додати угоду вручну</h3><p>Для угод, які ти відкрив сам. Якщо угода ще відкрита, залиш «Ціна виходу» порожньою: вона з'явиться у «Відкритих», і там її можна буде закрити.</p>
+ <div class="fld"><label>Монета</label><select id="m_sym">${COINS.map(c=>`<option ${c.s===st.sel?'selected':''}>${c.s}</option>`).join('')}</select></div>
+ <div class="grid2"><div class="fld"><label>Напрямок</label><select id="m_dir"><option value="1">Лонг ↑</option><option value="-1">Шорт ↓</option></select></div>
+ <div class="fld"><label>Ринок</label><select id="m_mode"><option value="futures" ${S.mode==='futures'?'selected':''}>Ф'ючерси</option><option value="spot" ${S.mode==='spot'?'selected':''}>Спот</option></select></div></div>
+ <div class="grid2">${fld('m_in','Ціна входу',cur?+cur.price.toPrecision(6):'','')}${fld('m_marg','Застава, USDT','','скільки заклав')}</div>
+ <div class="grid2">${fld('m_lev','Плече','1','на споті 1','1')}${fld('m_out','Ціна виходу','','порожньо = ще відкрита')}</div>
+ <div class="grid2">${fld('m_sl','Стоп-лосс','','необов\'язково')}${fld('m_tp','Тейк-профіт','','необов\'язково')}</div>
+ <div id="m_err" class="banner red" style="display:none"></div>
  <button class="btn" data-act="saveManual">Зберегти</button>`}
 
 /* ================== ПОДІЇ ================== */
@@ -812,9 +815,19 @@ document.addEventListener('click',e=>{
   else if(a==='impJ'){try{const d=JSON.parse(document.getElementById('impTxt').value);if(Array.isArray(d.J)){J=d.J;Object.assign(S,d.S||{});save('sd_journal',J);save('sd_settings',S);closeSheet();renderAll()}}catch(err){b.textContent='Невірний формат'}}
   else if(a==='clearJ'){if(!st.confirmClear){st.confirmClear=true;openSheet(settingsHtml(false))}else{J=[];save('sd_journal',J);st.confirmClear=false;closeSheet();renderAll()}}
   else if(a==='addManual')openSheet(manualHtml());
-  else if(a==='saveManual'){const sym=document.getElementById('m_sym').value,dir=+document.getElementById('m_dir').value,mode=document.getElementById('m_mode').value,en=num('m_in'),ex=num('m_out'),sz=num('m_size'),lev=num('m_lev')||1;
-    if(!(en>0&&ex>0&&sz>0))return;const f=feesFor(mode),qty=sz/en,pnl=qty*(ex-en)*dir-sz*f.tk-qty*ex*f.tk,now=Date.now();
-    J.push({id:now.toString(36),sym,dir,mode,entry:en,exit:ex,qty,lev,notional:sz,feeIn:sz*f.tk,ftk:f.tk,status:'closed',result:'manual',pnl,openedAt:now,closedAt:now,sl:null,tp1:null,tp2:null});save('sd_journal',J);closeSheet();renderAll()}
+  else if(a==='saveManual'){const sym=document.getElementById('m_sym').value,mode=document.getElementById('m_mode').value,dir=mode==='spot'?1:+document.getElementById('m_dir').value,
+      en=num('m_in'),ex=num('m_out'),mg=num('m_marg'),lev=mode==='spot'?1:Math.max(1,num('m_lev')||1),sl=num('m_sl'),tp=num('m_tp'),err=document.getElementById('m_err');
+    const bad=m=>{err.textContent=m;err.style.display='block'};
+    if(!(en>0))return bad('Вкажи ціну входу.');if(!(mg>0))return bad('Вкажи заставу в USDT.');
+    if(sl>0&&(sl-en)*dir>=0)return bad(`Для ${dir>0?'лонгу':'шорту'} стоп має бути ${dir>0?'нижче':'вище'} ціни входу.`);
+    if(tp>0&&(tp-en)*dir<=0)return bad(`Для ${dir>0?'лонгу':'шорту'} тейк має бути ${dir>0?'вище':'нижче'} ціни входу.`);
+    const f=feesFor(mode),sz=mg*lev,qty=sz/en,feeIn=sz*f.tk,now=Date.now();
+    const t={id:now.toString(36),manual:true,sym,dir,mode,entry:en,qty,lev,notional:sz,margin:mg,feeIn,fmk:f.mk,ftk:f.tk,tpMode:'one',openedAt:now,
+      sl:sl>0?sl:null,tp1:tp>0?tp:null,tp2:tp>0?tp:null};
+    if(t.sl){t.pnlSL=-qty*Math.abs(en-sl)-feeIn-qty*sl*f.tk;t.riskUsd=-t.pnlSL}
+    if(t.tp1)t.pnlTP=qty*(tp-en)*dir-feeIn-qty*tp*f.mk;
+    if(ex>0)Object.assign(t,{status:'closed',result:'manual',exit:ex,pnl:qty*(ex-en)*dir-feeIn-qty*ex*f.tk,closedAt:now});else t.status='open';
+    J.push(t);save('sd_journal',J);closeSheet();renderAll()}
 });
 document.addEventListener('input',e=>{const k=e.target.dataset.inp;if(!k)return;st.custom[k]=parseFloat(e.target.value);renderMineOut()});
 document.addEventListener('change',e=>{const g=e.target.dataset.chg;if(g==='btFile'&&e.target.files.length){st.btErr=null;st.btProg='Читаю файли…';st.btRun=true;renderStats();btFiles([...e.target.files]).then(ds=>runBT(ds,'Файли Binance')).catch(er=>{st.btErr=er.message;st.btProg='';st.btRun=false;renderStats()})}if(g==='sel'){st.sel=e.target.value;st.override=null;renderTrade()}if(g==='chartSym'){st.chartSym=e.target.value;chartData(true);renderInd();if(st.src==='live'&&!(L[st.chartSym]&&L[st.chartSym][st.chartTf]))loadTf(st.chartSym,st.chartTf).then(()=>chartData(true))}});
